@@ -1,0 +1,61 @@
+{
+  "name": "docto",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A clinic appointment voice agent with real availability and explainable evaluations.",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,md,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,md,json}\"",
+    "db:migrate": "tsx --env-file-if-exists=.env.local src/db/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=.env.local src/db/seed.ts",
+    "db:local": "tsx src/db/local-database.ts",
+    "retell:setup": "tsx --env-file-if-exists=.env.local src/integrations/retell/setup.ts",
+    "eval": "tsx --env-file-if-exists=.env.local src/evals/run-evals.ts"
+  },
+  "dependencies": {
+    "@date-fns/tz": "1.5.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "drizzle-orm": "0.45.3",
+    "google-auth-library": "11.1.0",
+    "lucide-react": "0.545.0",
+    "next": "16.3.8",
+    "postgres": "3.4.9",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "retell-client-js-sdk": "3.0.2",
+    "retell-sdk": "^6.2.3",
+    "server-only": "0.0.1",
+    "tailwind-merge": "3.3.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-socket": "0.2.11",
+    "@tailwindcss/postcss": "4.1.14",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "10.12.0",
+    "eslint-config-next": "16.4.0",
+    "prettier": "3.9.9",
+    "tailwindcss": "4.1.14",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vite": "8.3.3",
+    "vitest": "5.0.3"
+  }
+}

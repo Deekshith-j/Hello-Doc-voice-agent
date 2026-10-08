@@ -1,0 +1,146 @@
+/* Establishes Docto's design tokens, Tailwind utilities, and the few hand-written animations. */
+/* Components consume semantic tokens, so light and dark themes are defined once, here. */
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.982 0.003 165);
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.967 0.004 165);
+  --border: oklch(0.915 0.006 165);
+  --border-strong: oklch(0.86 0.008 165);
+  --foreground: oklch(0.205 0.014 170);
+  --muted-foreground: oklch(0.515 0.012 170);
+  --accent: oklch(0.56 0.105 165);
+  --accent-soft: oklch(0.955 0.03 165);
+  --accent-foreground: oklch(0.42 0.085 165);
+  --danger: oklch(0.6 0.19 27);
+  --warning-soft: oklch(0.96 0.045 80);
+  --warning-foreground: oklch(0.5 0.1 65);
+  --shadow-card:
+    0 1px 2px oklch(0.2 0.02 170 / 0.04),
+    0 4px 12px -4px oklch(0.2 0.02 170 / 0.06);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+:root.dark {
+  color-scheme: dark;
+  --background: oklch(0.155 0.006 170);
+  --surface: oklch(0.188 0.007 170);
+  --surface-muted: oklch(0.218 0.008 170);
+  --border: oklch(1 0 0 / 0.075);
+  --border-strong: oklch(1 0 0 / 0.13);
+  --foreground: oklch(0.955 0.005 170);
+  --muted-foreground: oklch(0.67 0.01 170);
+  --accent: oklch(0.76 0.12 165);
+  --accent-soft: oklch(0.76 0.12 165 / 0.12);
+  --accent-foreground: oklch(0.83 0.1 165);
+  --warning-soft: oklch(0.8 0.12 80 / 0.12);
+  --warning-foreground: oklch(0.84 0.1 80);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.03) inset;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-foreground: var(--warning-foreground);
+  --shadow-card: var(--shadow-card);
+  --ease-out-strong: var(--ease-out);
+}
+
+body {
+  min-width: 320px;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Entry stagger: each child sets --index; delays stay short so content never feels gated. */
+.enter {
+  animation: enter 420ms var(--ease-out) both;
+  animation-delay: calc(var(--index, 0) * 45ms);
+}
+
+.voice-bar {
+  transform-origin: center;
+  transition: transform 260ms var(--ease-out);
+}
+
+[data-voice="live"] .voice-bar {
+  animation: voice 900ms ease-in-out infinite alternate;
+}
+
+[data-voice="live"] .voice-orb {
+  animation: orb 9s linear infinite;
+}
+
+.listening-dot {
+  animation: listening 1.2s ease-in-out infinite;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes voice {
+  from {
+    transform: scaleY(0.3);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes orb {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes listening {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion keeps state changes visible but removes continuous and positional movement. */
+@media (prefers-reduced-motion: reduce) {
+  .enter {
+    animation-name: fade;
+  }
+  [data-voice="live"] .voice-bar,
+  [data-voice="live"] .voice-orb,
+  .listening-dot {
+    animation: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

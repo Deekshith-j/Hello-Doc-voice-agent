@@ -1,0 +1,9 @@
+# Keeps generated output, local credentials, and dependency trees out of commits.
+# Database migrations remain tracked because they are part of the deployment contract.
+node_modules/
+.next/
+coverage/
+.env
+.env.local
+*.tsbuildinfo
+.pglite/
