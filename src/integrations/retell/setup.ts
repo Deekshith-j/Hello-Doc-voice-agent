@@ -7,7 +7,7 @@ import { getClinicSettings } from "@/config/environment";
 import {
   buildRetellAgent,
   buildRetellLlm,
-  toolNames,
+  toolSpecs,
 } from "./agent-definition";
 import { RetellApi } from "./retell-api";
 
@@ -24,7 +24,7 @@ const setupSchema = z.object({
     .transform((value) => value.replace(/\/+$/, "")),
   RETELL_LLM_ID: z.string().optional(),
   RETELL_AGENT_ID: z.string().optional(),
-  RETELL_LLM_MODEL: z.string().default("gpt-4.1"),
+  RETELL_LLM_MODEL: z.string().default("gpt-4.1-mini"),
   RETELL_VOICE_ID: z.string().default("retell-Cimo"),
 });
 
@@ -43,16 +43,35 @@ const llmId = await api.upsertLlm(
   env.RETELL_LLM_ID || null,
   buildRetellLlm(settings),
 );
-const agentId = await api.upsertAgent(
-  env.RETELL_AGENT_ID || null,
-  buildRetellAgent(settings, llmId),
+let agentId: string;
+if (env.RETELL_AGENT_ID) {
+  try {
+    agentId = await api.upsertAgent(
+      env.RETELL_AGENT_ID,
+      buildRetellAgent(settings, llmId),
+    );
+  } catch (error) {
+    console.warn(
+      `Could not update agent ${env.RETELL_AGENT_ID}, creating a new agent instead...`,
+    );
+    agentId = await api.upsertAgent(null, buildRetellAgent(settings, llmId));
+  }
+} else {
+  agentId = await api.upsertAgent(null, buildRetellAgent(settings, llmId));
+}
+
+const registeredToolUrls = toolSpecs().map(
+  (t) => `${settings.publicBaseUrl}/api/tools/${t.path}`,
 );
 
-console.log(`Retell agent is configured with tools: ${toolNames().join(", ")}.
-Tools and webhook point at ${env.PUBLIC_BASE_URL}.
-
-Add these to your environment (Vercel project settings and .env.local):
-
-RETELL_LLM_ID=${llmId}
-RETELL_AGENT_ID=${agentId}
-`);
+console.log(`\n--- Retell Agent Setup Complete ---`);
+console.log(`Agent ID: ${agentId}`);
+console.log(`LLM ID: ${llmId}`);
+console.log(`Webhook URL: ${settings.publicBaseUrl}/api/retell/webhook`);
+console.log(`Registered Tools (${registeredToolUrls.length}):`);
+for (const url of registeredToolUrls) {
+  console.log(`  - ${url}`);
+}
+console.log(`\nAdd these to your environment (Vercel project settings and .env.local):`);
+console.log(`RETELL_LLM_ID=${llmId}`);
+console.log(`RETELL_AGENT_ID=${agentId}\n`);

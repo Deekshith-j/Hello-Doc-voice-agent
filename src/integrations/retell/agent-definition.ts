@@ -128,6 +128,10 @@ export function toolNames(): string[] {
   return tools.map((tool) => tool.name);
 }
 
+export function toolSpecs(): { name: string; path: string }[] {
+  return tools.map((tool) => ({ name: tool.name, path: tool.path }));
+}
+
 function toCustomTool(tool: ToolSpec, publicBaseUrl: string) {
   return {
     type: "custom",
