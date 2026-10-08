@@ -11,6 +11,8 @@ import { getClinicSettings } from "@/config/environment";
 import { formatDateTime, formatTime, humanize } from "@/lib/format";
 import { getToolRuntime } from "@/server/tool-runtime";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Appointments · Docto",
   description: "Upcoming clinic bookings and external calendar sync status.",

@@ -163,5 +163,5 @@ npm run build
 ## Known Limitations
 
 - **Public Demo Environment**: The dashboard and Live Call workspace are open without login for demo purposes. Only synthetic seed records are exposed. Authentication must be enabled before connecting real patient data or protected health information (PHI).
-- **Public Web Call Rate Limiting**: The browser web call endpoint (`/api/retell/web-call`) is rate limited to 5 calls per IP per hour and 30 calls daily overall to protect voice API quotas.
+- **Public Web Call Rate Limiting**: The browser web call endpoint (`/api/retell/web-call`) is rate limited to 5 calls per IP per hour and 30 calls daily overall to protect voice API quotas. Note that the web-call rate limit is per serverless instance, not global.
 - **External Calendar Sync**: External Google Calendar updates rely on provider OAuth refresh tokens; local PostgreSQL records commit first as `pending` if Google Calendar is unavailable.

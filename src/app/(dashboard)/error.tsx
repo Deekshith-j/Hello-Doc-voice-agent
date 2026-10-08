@@ -10,13 +10,13 @@ import { Button } from "@/components/ui/button";
 
 export default function DashboardError({
   error,
-  retry,
+  reset,
 }: {
   error: Error & { digest?: string };
-  retry: () => void;
+  reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    console.error("[DashboardError]", error);
   }, [error]);
 
   return (
@@ -26,15 +26,15 @@ export default function DashboardError({
           This page couldn&apos;t load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          The clinic database didn&apos;t answer. Check that DATABASE_URL is set
-          and reachable (locally, run <code>npm run db:local</code>).
+          {error.message ||
+            "The clinic database didn't answer. Check that DATABASE_URL is set and reachable."}
         </p>
         {error.digest ? (
           <p className="mt-2 font-mono text-[11px] text-muted-foreground">
             Reference {error.digest}
           </p>
         ) : null}
-        <Button className="mt-5" onClick={retry} variant="secondary">
+        <Button className="mt-5" onClick={() => reset()} variant="secondary">
           <RotateCw className="size-4" />
           Try again
         </Button>

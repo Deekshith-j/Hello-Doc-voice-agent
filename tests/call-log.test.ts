@@ -7,6 +7,7 @@ import { PostgresCallLogRepository } from "@/db/postgres-call-log-repository";
 import { PostgresDashboardRepository } from "@/db/postgres-dashboard-repository";
 
 import {
+  DOCTOR_ID,
   PATIENT_ID,
   startTestDatabase,
   type TestDatabase,
@@ -98,6 +99,19 @@ it("stores the transcript and analysis for the call detail view", async () => {
     disconnectionReason: "agent_hangup",
     transcript: [{ speaker: "agent", text: "Hello.", offsetSeconds: 0.5 }],
   });
+});
+
+it("lists doctor schedules without error", async () => {
+  await database.sql`
+    INSERT INTO time_off (doctor_id, time_span, reason)
+    VALUES (${DOCTOR_ID}, tstzrange(now(), now() + interval '2 days', '[)'), 'Vacation')
+  `;
+  const schedules = await dashboard.listDoctorSchedules(new Date());
+  expect(Array.isArray(schedules)).toBe(true);
+
+  const { default: DoctorsPage } = await import("@/app/(dashboard)/doctors/page");
+  const page = await DoctorsPage();
+  expect(page).toBeDefined();
 });
 
 function tool(

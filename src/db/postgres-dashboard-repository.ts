@@ -200,8 +200,8 @@ export class PostgresDashboardRepository {
       reason: row.reason,
       status: row.status,
       calendarSyncStatus: row.calendar_sync_status,
-      startAt: row.start_at,
-      endAt: row.end_at,
+      startAt: new Date(row.start_at),
+      endAt: new Date(row.end_at),
     }));
   }
 
@@ -270,8 +270,8 @@ export class PostgresDashboardRepository {
         timeOff: timeOff
           .filter((entry) => entry.doctor_id === doctor.id)
           .map((entry) => ({
-            startAt: entry.start_at,
-            endAt: entry.end_at,
+            startAt: new Date(entry.start_at),
+            endAt: new Date(entry.end_at),
             reason: entry.reason,
           })),
       };
@@ -309,7 +309,7 @@ export class PostgresDashboardRepository {
     return rows.map((row) => ({
       id: row.id,
       kind: row.kind,
-      occurredAt: row.occurred_at,
+      occurredAt: new Date(row.occurred_at),
       detail: row.detail,
       href: row.kind === "failed_call" ? `/calls/${row.id}` : "/appointments",
     }));
@@ -333,8 +333,8 @@ export class PostgresDashboardRepository {
     return rows.map((row) => ({
       id: row.id,
       suite: row.suite,
-      startedAt: row.started_at,
-      finishedAt: row.finished_at,
+      startedAt: new Date(row.started_at),
+      finishedAt: new Date(row.finished_at),
       passed: row.passed,
       failed: row.failed,
       results: row.results,
@@ -389,8 +389,8 @@ function toCallSummary(row: CallRow): CallSummary {
   return {
     id: row.id,
     providerCallId: row.retell_call_id,
-    startedAt: row.started_at,
-    endedAt: row.ended_at,
+    startedAt: new Date(row.started_at),
+    endedAt: row.ended_at ? new Date(row.ended_at) : null,
     outcome: row.outcome,
     callType: row.call_type,
     summary: row.summary,

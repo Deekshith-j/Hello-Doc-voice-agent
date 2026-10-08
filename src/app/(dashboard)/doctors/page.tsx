@@ -9,6 +9,8 @@ import { Panel } from "@/components/ui/panel";
 import { formatDay, weekdayNames } from "@/lib/format";
 import { getToolRuntime } from "@/server/tool-runtime";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Doctors · Docto",
   description:

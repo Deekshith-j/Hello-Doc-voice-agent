@@ -15,39 +15,47 @@ function formatter(
   return cached;
 }
 
-export function formatTime(value: Date, timeZone: string): string {
+function toDate(value: Date | string | number): Date {
+  if (value instanceof Date) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+export function formatTime(value: Date | string | number, timeZone: string): string {
   return formatter(timeZone, { hour: "numeric", minute: "2-digit" }).format(
-    value,
+    toDate(value),
   );
 }
 
-export function formatDay(value: Date, timeZone: string): string {
+export function formatDay(value: Date | string | number, timeZone: string): string {
   return formatter(timeZone, {
     weekday: "short",
     month: "short",
     day: "numeric",
-  }).format(value);
+  }).format(toDate(value));
 }
 
-export function formatDateTime(value: Date, timeZone: string): string {
-  return `${formatDay(value, timeZone)}, ${formatTime(value, timeZone)}`;
+export function formatDateTime(value: Date | string | number, timeZone: string): string {
+  const d = toDate(value);
+  return `${formatDay(d, timeZone)}, ${formatTime(d, timeZone)}`;
 }
 
-export function formatTimeZoneName(value: Date, timeZone: string): string {
+export function formatTimeZoneName(value: Date | string | number, timeZone: string): string {
+  const d = toDate(value);
   const part = formatter(timeZone, { timeZoneName: "short" })
-    .formatToParts(value)
+    .formatToParts(d)
     .find((entry) => entry.type === "timeZoneName");
   return part?.value ?? timeZone;
 }
 
 // Returns YYYY-MM-DD for the calendar day that `value` falls on in `timeZone`.
-export function localDateKey(value: Date, timeZone: string): string {
+export function localDateKey(value: Date | string | number, timeZone: string): string {
   return formatter(timeZone, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   })
-    .format(value)
+    .format(toDate(value))
     .replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2");
 }
 

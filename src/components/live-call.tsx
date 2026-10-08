@@ -262,10 +262,13 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
           title="Transcript"
         >
           <TranscriptList
+            agentTalking={agentTalking}
             emptyText={
-              voiceConnected
-                ? "Start a web call and speak to the agent. The conversation appears here."
-                : "Set up the Retell agent to place calls from this page."
+              status === "live" || status === "connecting"
+                ? "Connecting to agent..."
+                : voiceConnected
+                  ? "Start a web call and speak to the agent. The conversation appears here."
+                  : "Set up the Retell agent to place calls from this page."
             }
             listening={status === "live" && !agentTalking}
             turns={turns}
@@ -290,11 +293,25 @@ function toTurns(
   transcript: readonly { content: string; role: string }[],
 ): TranscriptTurnView[] {
   return transcript
-    .filter((turn) => turn.role === "agent" || turn.role === "user")
-    .map((turn, index) => ({
-      key: String(index),
-      offsetSeconds: null,
-      speaker: turn.role === "agent" ? "agent" : "caller",
-      text: turn.content,
-    }));
+    .filter((turn) => {
+      const r = turn.role?.toLowerCase();
+      return (
+        Boolean(turn.content) &&
+        (r === "agent" ||
+          r === "assistant" ||
+          r === "user" ||
+          r === "caller" ||
+          r === "human")
+      );
+    })
+    .map((turn, index) => {
+      const r = turn.role.toLowerCase();
+      const isAgent = r === "agent" || r === "assistant";
+      return {
+        key: `${index}-${r}`,
+        offsetSeconds: null,
+        speaker: isAgent ? ("agent" as const) : ("caller" as const),
+        text: turn.content,
+      };
+    });
 }

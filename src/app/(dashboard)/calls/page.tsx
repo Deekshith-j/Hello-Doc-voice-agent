@@ -19,6 +19,8 @@ import {
 } from "@/lib/format";
 import { getToolRuntime } from "@/server/tool-runtime";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Calls · Docto",
   description: "Recent patient voice calls and execution logs.",

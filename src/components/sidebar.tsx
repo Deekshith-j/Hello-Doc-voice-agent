@@ -5,7 +5,6 @@
 import {
   AudioLines,
   CalendarDays,
-  FlaskConical,
   PhoneCall,
   Stethoscope,
   type LucideIcon,
@@ -28,7 +27,6 @@ export const navigation: readonly NavigationItem[] = [
   { href: "/calls", label: "Calls", icon: PhoneCall },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/doctors", label: "Doctors", icon: Stethoscope },
-  { href: "/evaluations", label: "Evaluations", icon: FlaskConical },
 ];
 
 export function isActive(pathname: string, href: string): boolean {

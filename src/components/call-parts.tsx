@@ -97,15 +97,17 @@ export interface TranscriptTurnView {
 }
 
 export function TranscriptList({
+  agentTalking = false,
   emptyText,
   listening = false,
   turns,
 }: {
+  agentTalking?: boolean;
   emptyText: string;
   listening?: boolean;
   turns: readonly TranscriptTurnView[];
 }) {
-  if (turns.length === 0 && !listening)
+  if (turns.length === 0 && !listening && !agentTalking)
     return (
       <p className="px-4 py-6 text-xs text-muted-foreground">{emptyText}</p>
     );
@@ -131,6 +133,13 @@ export function TranscriptList({
             ))}
           </span>
           Listening
+        </li>
+      ) : agentTalking && turns.length === 0 ? (
+        <li
+          aria-live="polite"
+          className="flex items-center gap-2 pl-10 text-xs text-accent"
+        >
+          Docto speaking...
         </li>
       ) : null}
     </ol>

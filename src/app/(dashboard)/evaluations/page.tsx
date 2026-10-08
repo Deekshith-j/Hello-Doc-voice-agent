@@ -13,6 +13,8 @@ import { getClinicSettings } from "@/config/environment";
 import { formatDateTime } from "@/lib/format";
 import { getToolRuntime } from "@/server/tool-runtime";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Evaluations · Docto",
   description: "Automated tool contract evaluation runs and benchmark results.",
@@ -27,7 +29,7 @@ export default async function EvaluationsPage() {
     <PageContainer>
       <PageHeader
         description="Verify tool contracts, invariant adherence, and multi-turn booking accuracy."
-        title="Agent evaluations"
+        title="tool API regression suite"
       />
 
       <div className="mt-6 space-y-6">

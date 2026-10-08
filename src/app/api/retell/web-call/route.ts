@@ -1,6 +1,10 @@
 // Starts a browser web call and returns a short-lived access token.
 // The Retell API key never leaves the server; only the per-call token reaches the browser.
-import { areWebCallsEnabled, getRetellConfig } from "@/config/environment";
+import {
+  areWebCallsEnabled,
+  getClinicSettings,
+  getRetellConfig,
+} from "@/config/environment";
 import { RetellApi, RetellApiError } from "@/integrations/retell/retell-api";
 import { getToolRuntime } from "@/server/tool-runtime";
 
@@ -120,10 +124,16 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
+    const clinicSettings = getClinicSettings();
     const session = await new RetellApi(config.apiKey).createWebCall(
       config.agentId,
       { source: "dashboard" },
-      { emergency_number: "911" },
+      {
+        clinic_name: clinicSettings.name,
+        emergency_number: "911",
+        clinic_timezone: clinicSettings.timeZone,
+        clinic_time_zone: clinicSettings.timeZone,
+      },
     );
     console.info(
       JSON.stringify({
