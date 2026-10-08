@@ -1,0 +1,18 @@
+name: Calendar Sync Cron
+
+on:
+  schedule:
+    # 10-minute cadence reconciling calendar writes without hitting Vercel Hobby limits
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  reconcile-calendar:
+    name: Reconcile External Calendar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger calendar sync endpoint
+        run: |
+          curl -f -sS -X GET "${{ secrets.APP_URL }}/api/internal/calendar-sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "User-Agent: GitHub-Actions-Calendar-Sync"

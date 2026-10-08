@@ -151,7 +151,7 @@ The preview was rebuilt using patterns from current AI-product interfaces: Geist
 - Scaffolded `evals/`, `agent/`, and drizzle-kit configuration (`drizzle.config.ts`).
 
 ### Why these choices (Pooler vs. Direct Connection)
-- **Supabase Transaction Pooler (port 6543):** Serverless instances (such as Next.js route handlers on Vercel) rapidly spawn and tear down connections. Supabase's transaction pooler (PgBouncer) multiplexes these across shared database connections, protecting the database engine against connection starvation during traffic spikes. Because PgBouncer in transaction mode does not preserve prepared statement caches across transactions, `postgres.js` must run with `prepare: false`.
+- **Supabase Transaction Pooler (port 6543):** Serverless instances (such as Next.js route handlers on Vercel) rapidly spawn and tear down connections. Supabase's transaction pooler multiplexes these across shared database connections, protecting the database engine against connection starvation during traffic spikes. Because the Supabase transaction pooler does not preserve prepared statement caches across transactions, `postgres.js` must run with `prepare: false`.
 - **Direct Connection (`DIRECT_URL`, port 5432):** Schema migrations (`drizzle-kit migrate`, DDL operations) require session-level privileges and transactional locks that transaction poolers either disrupt or disallow. Migration steps therefore connect directly to Postgres on port 5432.
 - **Optional Retell credentials:** Allows full backend development, unit testing, wire-protocol database testing, and evaluation runs without requiring an active voice provider contract or exposing billable minutes.
 
@@ -161,7 +161,24 @@ The preview was rebuilt using patterns from current AI-product interfaces: Geist
 - **Client-side Supabase SDK (`@supabase/supabase-js`) for database queries:** Rejected to preserve explicit SQL control, strict backend transaction boundaries, and ensure zero client-side leakage of database schema or privileges.
 
 ### How it can fail
-- **Prepared statements enabled on the pooler:** If `prepare: false` is omitted, PgBouncer will return `prepared statement "..." does not exist` errors as queries route across different pooler connections.
+- **Prepared statements enabled on the pooler:** If `prepare: false` is omitted, the Supabase transaction pooler will return `prepared statement "..." does not exist` errors as queries route across different pooler connections.
 - **Running DDL migrations through the transaction pooler:** Running migrations via port 6543 can result in hung locks or unsupported transaction commands. Migrations must use `DIRECT_URL`.
 - **Supabase project pause on free tier:** Supabase projects pause after periods of inactivity, causing connection timeouts (`ENOTFOUND` or connection refused). Requires dashboard unpausing prior to demonstrations.
+
+### Vercel Cron Cadence & Calendar Sync Retry Policy
+- **Vercel Hobby cron limitation:** Vercel Hobby accounts enforce a maximum cron schedule frequency of once per day (`0 4 * * *`). The previous `*/10 * * * *` cadence fails deployment on Vercel Hobby tier.
+- **Protected route:** `/api/internal/calendar-sync` remains strictly protected by constant-time bearer authentication verifying `Authorization: Bearer <CRON_SECRET>`.
+- **Next.js after() write retry:** When a calendar write fails following a successful Postgres appointment insert or cancellation, the tool route schedules a retry using Next.js `after()`, ensuring the serverless execution context completes without blocking the caller response, logging any failures with `request_id` and zero PHI.
+- **High-frequency reconciliation alternative:** If a 10-minute reconciliation cadence is required, a GitHub Actions scheduled workflow (`cron: "*/10 * * * *"`) can curl the secured endpoint with the `CRON_SECRET` bearer token.
+
+### Revive-on-Conflict Idempotency Tradeoff
+- **The mechanism**: When an appointment is booked and subsequently cancelled within a call session, its `idempotency_key` remains stored on the cancelled row. If the caller subsequently re-books that identical slot in the same call session, `createAppointment` encounters a unique key collision on `appointments_idempotency_key_unique_idx`. The insert issues `ON CONFLICT (idempotency_key) DO UPDATE SET status = 'booked', reason = EXCLUDED.reason, calendar_sync_status = EXCLUDED.calendar_sync_status, time_span = EXCLUDED.time_span, updated_at = now()`, reviving the appointment row in place rather than creating an additional row.
+- **Why this choice**: Prevents duplicate rows and dangling cancelled records for callers that cycle through booking decisions during a single voice session. Preserves the single authoritative row for downstream audit and call timeline association.
+- **The tradeoffs & safeguards**:
+  - *Rescheduling conflict detection*: If a booking was rescheduled to a new time and the original booking request is retried with the original idempotency key, `assertSameBooking` detects the changed time payload and explicitly rejects with `idempotency_key_reused` (409) rather than overwriting or resurrecting the old time.
+  - *Intervening competitor protection*: If another patient books the slot after it was cancelled, either the domain availability check or PostgreSQL's GiST exclusion constraint (`appointments_no_doctor_overlap`) triggers with `23P01`. The catch block inspects the conflicting row: because `patient_id` belongs to the competing patient, revival is rejected and the caller receives `slot_unavailable` with fresh alternative slots.
+  - *Audit trail*: Because the row is updated in place, the `updated_at` timestamp advances, while `created_at` records the original booking instant.
+
+
+
 

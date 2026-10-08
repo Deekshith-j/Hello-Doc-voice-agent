@@ -20,7 +20,7 @@
     "db:seed": "tsx --env-file-if-exists=.env.local src/db/seed.ts",
     "db:local": "tsx src/db/local-database.ts",
     "retell:setup": "tsx --env-file-if-exists=.env.local src/integrations/retell/setup.ts",
-    "eval": "tsx --env-file-if-exists=.env.local src/evals/run-evals.ts"
+    "eval": "tsx --env-file-if-exists=.env.local src/evals/tool-api-regression-suite.ts"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",

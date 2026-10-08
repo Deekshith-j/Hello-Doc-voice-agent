@@ -1,12 +1,13 @@
-// Runs every tool scenario against an isolated, freshly seeded database and reports the results.
-// Results are saved to DATABASE_URL when it is set, so the Evaluations page shows each run.
+// Tool API regression suite.
+// Exercises every tool scenario against an isolated, freshly seeded database and reports the results.
+// Note: This is a tool API regression suite, NOT the Part B agent eval harness.
 import type { EvalCaseResult } from "@/db/postgres-dashboard-repository";
 
 import { CaseRecorder } from "./checks";
 import { scenarios } from "./scenarios";
 import { ToolClient } from "./tool-client";
 
-const SUITE = "Tool contract";
+const SUITE = "tool API regression suite";
 const EVAL_SIGNING_KEY = "eval-only-signing-key";
 
 // Captured before the harness points the app at its own isolated database.

@@ -190,13 +190,19 @@ export class PostgresClinicRepository
     input: CreateAppointmentInput,
   ): Promise<AppointmentRecord> {
     // A same-key race returns the winner's row atomically instead of inserting twice.
+    // If a previously cancelled appointment is rebooked with the same key, it is updated to booked.
     const rows = await this.sql<AppointmentRow[]>`
       INSERT INTO appointments
         (doctor_id, patient_id, time_span, reason, idempotency_key, calendar_sync_status)
       VALUES (${input.doctorId}, ${input.patientId},
         tstzrange(${input.time.start}, ${input.time.end}, '[)'), ${input.reason},
         ${input.idempotencyKey}, ${input.calendarSyncStatus})
-      ON CONFLICT (idempotency_key) DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
+      ON CONFLICT (idempotency_key) DO UPDATE
+        SET status = 'booked',
+            reason = EXCLUDED.reason,
+            calendar_sync_status = EXCLUDED.calendar_sync_status,
+            time_span = EXCLUDED.time_span,
+            updated_at = now()
       RETURNING ${appointmentColumns(this.sql)}
     `;
     const row = rows[0];
@@ -216,6 +222,14 @@ export class PostgresClinicRepository
     return rows[0] ? mapAppointment(rows[0]) : null;
   }
 
+  async findAppointmentById(id: string): Promise<AppointmentRecord | null> {
+    const rows = await this.sql<AppointmentRow[]>`
+      SELECT ${appointmentColumns(this.sql)}
+      FROM appointments WHERE id = ${id}
+    `;
+    return rows[0] ? mapAppointment(rows[0]) : null;
+  }
+
   async findAppointmentByIdempotencyKey(
     idempotencyKey: string,
   ): Promise<AppointmentRecord | null> {
@@ -223,6 +237,21 @@ export class PostgresClinicRepository
     const rows = await this.sql<AppointmentRow[]>`
       SELECT ${appointmentColumns(this.sql)}
       FROM appointments WHERE idempotency_key = ${idempotencyKey}
+    `;
+    return rows[0] ? mapAppointment(rows[0]) : null;
+  }
+
+  async findConflictingAppointment(
+    doctorId: string,
+    time: TimeInterval,
+  ): Promise<AppointmentRecord | null> {
+    const rows = await this.sql<AppointmentRow[]>`
+      SELECT ${appointmentColumns(this.sql)}
+      FROM appointments
+      WHERE doctor_id = ${doctorId}
+        AND status = 'booked'
+        AND time_span && tstzrange(${time.start}, ${time.end}, '[)')
+      LIMIT 1
     `;
     return rows[0] ? mapAppointment(rows[0]) : null;
   }

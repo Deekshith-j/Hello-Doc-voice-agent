@@ -53,8 +53,13 @@ export interface ClinicRepository {
     appointmentId: string,
     patientId: string,
   ): Promise<AppointmentRecord | null>;
+  findAppointmentById(appointmentId: string): Promise<AppointmentRecord | null>;
   findAppointmentByIdempotencyKey(
     idempotencyKey: string,
+  ): Promise<AppointmentRecord | null>;
+  findConflictingAppointment(
+    doctorId: string,
+    time: TimeInterval,
   ): Promise<AppointmentRecord | null>;
   findDoctor(doctorId: string): Promise<DoctorRecord | null>;
   findDoctorsBySpecialty(specialty: string): Promise<DoctorRecord[]>;

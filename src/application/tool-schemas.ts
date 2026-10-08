@@ -80,8 +80,6 @@ export const checkAvailabilitySchema = z
 export const bookAppointmentSchema = z
   .object({
     doctor_id: z.uuid().describe("The chosen slot's doctor_id."),
-    // Optional for the agent: Retell requests derive it from the call ID and slot.
-    idempotency_key: z.string().trim().min(8).max(200).optional(),
     patient_id: patientId,
     reason: z
       .string()

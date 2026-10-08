@@ -1,24 +1,32 @@
 // Creates an idempotent appointment after rechecking live availability.
+// The idempotency key is derived on the server from call_id + patient_id + doctor_id + start_at.
 // PostgreSQL's exclusion constraint remains the final defense against racing callers.
-import { toolFailure } from "@/application/tool-response";
+import { createHash } from "node:crypto";
+
 import { bookAppointmentSchema } from "@/application/tool-schemas";
 import { createToolRoute } from "@/server/tool-route";
+
+export function deriveIdempotencyKey(
+  callId: string | null,
+  patientId: string,
+  doctorId: string,
+  startAt: string,
+): string {
+  const canonicalStart = new Date(startAt).toISOString();
+  const source = `${callId ?? "direct"}:${patientId}:${doctorId}:${canonicalStart}`;
+  return createHash("sha256").update(source).digest("hex");
+}
 
 export const POST = createToolRoute({
   name: "book_appointment",
   schema: bookAppointmentSchema,
   execute: (service, input, { callId }) => {
-    // One call booking one slot is one logical request, however often Retell retries it.
-    const idempotencyKey =
-      input.idempotency_key ??
-      (callId ? `${callId}:${input.doctor_id}:${input.start_at}` : null);
-    if (!idempotencyKey)
-      return Promise.resolve(
-        toolFailure(
-          "invalid_request",
-          "Booking needs an idempotency key outside a voice call.",
-        ),
-      );
+    const idempotencyKey = deriveIdempotencyKey(
+      callId,
+      input.patient_id,
+      input.doctor_id,
+      input.start_at,
+    );
     return service.bookAppointment({
       ...input,
       idempotency_key: idempotencyKey,

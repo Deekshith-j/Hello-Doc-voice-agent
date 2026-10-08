@@ -1,8 +1,9 @@
 {
+  "regions": ["hnd1"],
   "crons": [
     {
       "path": "/api/internal/calendar-sync",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 4 * * *"
     }
   ]
 }

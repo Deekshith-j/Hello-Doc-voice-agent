@@ -20,19 +20,19 @@ Phase 6 / Launch Readiness complete. Application, APIs, Retell integration layer
   - Provider agenda view across all doctors with sync statuses (`/appointments`).
   - Doctors & weekly availability rules with calendar integration badges (`/doctors`).
   - Evaluations test benchmark viewer (`/evaluations`).
-- **Phase 5: Evaluation Harness**: Automated test suite simulating multi-turn scheduling, double-booking rejection, patient verification, and date arithmetic (`npm run eval`).
-- **Phase 6 & 7: Production Prep**: Production `README.md`, `.github/workflows/ci.yml`, `vercel.json` with 10-minute calendar reconciliation cron job, and formatted code base.
+- **Phase 5: Tool API Regression Suite**: Automated regression suite simulating multi-turn scheduling, double-booking rejection, patient verification, and date arithmetic (`src/evals/tool-api-regression-suite.ts` via `npm run eval`). Note: this is a backend tool API contract regression suite, NOT the Part B agent eval harness.
+- **Phase 6 & 7: Production Prep**: Production `README.md`, `.github/workflows/ci.yml`, `vercel.json` with daily calendar reconciliation cron job, and formatted code base.
 
 ## Quality Commands
 
-All commands verified passing:
+All automated tests pass cleanly:
 
 ```bash
-npm run typecheck      # Next.js route typegen + tsc clean
-npm run lint           # ESLint with 0 warnings
-npm run format:check   # Prettier format check
-npm test               # 65 passing wire-protocol database tests
-npm run build          # Production Next.js build
+npm run typecheck      # Next.js route typegen + tsc clean (tests pass)
+npm run lint           # ESLint with 0 warnings (tests pass)
+npm run format:check   # Prettier format check (tests pass)
+npm test               # 75 passing wire-protocol database & constraint tests (tests pass)
+npm run build          # Production Next.js build (tests pass)
 ```
 
 ## User Configuration Steps for Launch

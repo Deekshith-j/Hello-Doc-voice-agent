@@ -3,9 +3,11 @@
 import { createSqlClient } from "./client";
 import { runMigrations } from "./migrations";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DIRECT_URL;
 if (!databaseUrl)
-  throw new Error("DATABASE_URL is required to run migrations.");
+  throw new Error(
+    "DIRECT_URL is required to run migrations. Do not run migrations through the transaction pooler (DATABASE_URL).",
+  );
 
 const sql = createSqlClient(databaseUrl);
 try {

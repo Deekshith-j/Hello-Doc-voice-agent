@@ -17,9 +17,58 @@ export interface TestDatabase {
   sql: Sql;
 }
 
+export interface ProjectIdentity {
+  projectRef: string | null;
+  host: string;
+  database: string;
+}
+
+export function extractProjectIdentity(urlStr: string): ProjectIdentity {
+  const parsed = new URL(urlStr);
+  const username = decodeURIComponent(parsed.username);
+  let projectRef: string | null = null;
+  if (username.startsWith("postgres.")) {
+    projectRef = username.slice("postgres.".length);
+  } else if (
+    parsed.hostname.startsWith("db.") &&
+    parsed.hostname.endsWith(".supabase.co")
+  ) {
+    projectRef = parsed.hostname.slice(3, -".supabase.co".length);
+  }
+  return {
+    projectRef,
+    host: parsed.hostname,
+    database: parsed.pathname.replace(/^\//, ""),
+  };
+}
+
+export function isSameDatabaseProject(
+  mainUrlStr: string,
+  testUrlStr: string,
+): boolean {
+  try {
+    const main = extractProjectIdentity(mainUrlStr);
+    const test = extractProjectIdentity(testUrlStr);
+
+    if (main.projectRef && test.projectRef) {
+      return main.projectRef === test.projectRef;
+    }
+    if (main.projectRef && test.host.includes(main.projectRef)) {
+      return true;
+    }
+    if (test.projectRef && main.host.includes(test.projectRef)) {
+      return true;
+    }
+    return main.host === test.host && main.database === test.database;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Ensures test database configuration never points to the main database.
- * Throws immediately if TEST_DATABASE_URL matches DATABASE_URL.
+ * Ensures test database configuration never points to the main database project.
+ * Compares project identifier, host, and database name.
+ * Prints ONLY true/false for "same project", never credential values.
  */
 export function assertTestDatabaseSafety(
   mainUrl?: string,
@@ -27,9 +76,33 @@ export function assertTestDatabaseSafety(
 ): void {
   const main = mainUrl ?? process.env.DATABASE_URL;
   const test = testUrl ?? process.env.TEST_DATABASE_URL;
-  if (main && test && main.trim() !== "" && main.trim() === test.trim()) {
+  if (main && test && main.trim() !== "" && test.trim() !== "") {
+    const same = isSameDatabaseProject(main, test);
+    console.log(`[database-safety] same project: ${same}`);
+    if (same) {
+      throw new Error(
+        "Safety guard violation: TEST_DATABASE_URL points to the same project as DATABASE_URL. Tests must run strictly against an isolated test database.",
+      );
+    }
+  }
+}
+
+export async function ensureTestMarkerTable(sql: Sql): Promise<void> {
+  await sql`CREATE TABLE IF NOT EXISTS _test_database (
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`;
+}
+
+export async function assertTestMarkerTable(sql: Sql): Promise<void> {
+  const rows = await sql<{ exists: boolean }[]>`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables 
+      WHERE table_name = '_test_database'
+    ) as exists
+  `;
+  if (!rows[0]?.exists) {
     throw new Error(
-      `Safety guard violation: TEST_DATABASE_URL cannot equal DATABASE_URL (${main}). Tests must run strictly against an isolated test database.`,
+      "Safety guard violation: Marker table '_test_database' does not exist. Aborting truncate/reset on non-test database.",
     );
   }
 }
@@ -49,6 +122,7 @@ async function getOrCreateSharedDb(): Promise<SharedDbState> {
       const testUrl = process.env.TEST_DATABASE_URL;
       if (testUrl) {
         const sql = createSqlClient(testUrl);
+        await ensureTestMarkerTable(sql);
         await runMigrations(sql);
         // Ensure any test reading DATABASE_URL only reaches the test database
         process.env.DATABASE_URL = testUrl;
@@ -63,6 +137,7 @@ async function getOrCreateSharedDb(): Promise<SharedDbState> {
       // Default fallback: isolated embedded Postgres instance with wire-protocol support
       const embedded = await startEmbeddedDatabase();
       const sql = createSqlClient(embedded.url);
+      await ensureTestMarkerTable(sql);
       process.env.DATABASE_URL = embedded.url;
       return {
         sql,
@@ -80,6 +155,7 @@ export async function startTestDatabase(): Promise<TestDatabase> {
   const shared = await getOrCreateSharedDb();
 
   const reset = async () => {
+    await assertTestMarkerTable(shared.sql);
     await shared.sql`TRUNCATE appointments, patients, availability_rules, time_off, doctors,
       rate_limit_buckets, calls, tool_calls, eval_runs CASCADE`;
     await insertFixtures(shared.sql);

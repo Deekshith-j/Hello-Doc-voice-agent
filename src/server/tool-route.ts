@@ -2,6 +2,7 @@
 // Signature checks, rate limits, validation, call logging, and errors stay identical across tools.
 import { randomUUID } from "node:crypto";
 
+import { after } from "next/server";
 import { z } from "zod";
 
 import type { AppointmentToolService } from "@/application/appointment-tool-service";
@@ -77,6 +78,48 @@ export function createToolRoute<TSchema extends z.ZodType>(
         result.ok ? "completed" : "rejected",
         result.code,
       );
+
+      if (
+        result.code.endsWith("_calendar_pending") &&
+        result.data &&
+        typeof result.data === "object" &&
+        "appointment_id" in result.data
+      ) {
+        const appointmentId = String(
+          (result.data as { appointment_id: unknown }).appointment_id,
+        );
+        try {
+          after(async () => {
+            try {
+              await runtime.service.retryCalendarSync(appointmentId);
+            } catch (error) {
+              console.warn(
+                JSON.stringify({
+                  event: "calendar_retry_failed",
+                  request_id: requestId,
+                  appointment_id: appointmentId,
+                  error: error instanceof Error ? error.name : "unknown",
+                }),
+              );
+            }
+          });
+        } catch {
+          // If executed outside of a request lifecycle (e.g. tests), fall back cleanly
+          void runtime.service
+            .retryCalendarSync(appointmentId)
+            .catch((error) => {
+              console.warn(
+                JSON.stringify({
+                  event: "calendar_retry_failed",
+                  request_id: requestId,
+                  appointment_id: appointmentId,
+                  error: error instanceof Error ? error.name : "unknown",
+                }),
+              );
+            });
+        }
+      }
+
       return withRequestId(Response.json(result), requestId);
     } catch (error) {
       return handleRouteError(error, tool.name, requestId, startedAt);

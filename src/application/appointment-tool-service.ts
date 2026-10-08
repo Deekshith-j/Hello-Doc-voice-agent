@@ -11,6 +11,7 @@ import type { FreeSlot } from "@/domain/get-free-slots";
 import type { CalendarSync } from "./calendar-sync";
 import type {
   AppointmentRecord,
+  CalendarSyncStatus,
   ClinicRepository,
   DoctorRecord,
 } from "./clinic-repository";
@@ -177,7 +178,7 @@ export class AppointmentToolService {
     const replay = await this.repository.findAppointmentByIdempotencyKey(
       input.idempotency_key,
     );
-    if (replay) {
+    if (replay && replay.status === "booked") {
       assertSameBooking(replay, input, time);
       return this.respond("booked", replay, doctor);
     }
@@ -200,6 +201,19 @@ export class AppointmentToolService {
       return this.respond("booked", appointment, doctor);
     } catch (error) {
       if (getPostgresErrorCode(error) !== EXCLUSION_VIOLATION) throw error;
+      const conflicting = await this.repository.findConflictingAppointment(
+        doctor.id,
+        time,
+      );
+      if (
+        conflicting &&
+        conflicting.status === "booked" &&
+        conflicting.patientId === patient.id &&
+        conflicting.doctorId === doctor.id &&
+        conflicting.time.start.getTime() === time.start.getTime()
+      ) {
+        return this.respond("booked", conflicting, doctor);
+      }
       return this.slotTakenResponse(doctor, time);
     }
   }
@@ -355,6 +369,14 @@ export class AppointmentToolService {
       `The appointment is ${verb}.`,
       data,
     );
+  }
+
+  async retryCalendarSync(
+    appointmentId: string,
+  ): Promise<CalendarSyncStatus | null> {
+    const appointment = await this.repository.findAppointmentById(appointmentId);
+    if (!appointment) return null;
+    return this.dependencies.calendarSync.sync(appointment);
   }
 }
 

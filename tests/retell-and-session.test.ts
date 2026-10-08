@@ -94,13 +94,59 @@ describe("Test database safety guard", () => {
     );
   });
 
-  it("permits distinct database URLs", async () => {
+  it("throws when TEST_DATABASE_URL shares the same Supabase project identifier", async () => {
     const { assertTestDatabaseSafety } = await import("./support/test-database");
-    expect(() =>
-      assertTestDatabaseSafety(
-        "postgresql://postgres:secret@db.supabase.co:5432/postgres",
-        "postgresql://postgres:secret@localhost:5432/test_db",
-      ),
-    ).not.toThrow();
+    const mainUrl =
+      "postgresql://postgres.myproj123:secret@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
+    const testUrl =
+      "postgresql://postgres.myproj123:secret@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres";
+    expect(() => assertTestDatabaseSafety(mainUrl, testUrl)).toThrow(
+      /Safety guard violation/,
+    );
+  });
+
+  it("permits distinct database URLs and distinct projects", async () => {
+    const { assertTestDatabaseSafety } = await import("./support/test-database");
+    const mainUrl =
+      "postgresql://postgres.projA:secret@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
+    const testUrl =
+      "postgresql://postgres.projB:secret@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres";
+    expect(() => assertTestDatabaseSafety(mainUrl, testUrl)).not.toThrow();
   });
 });
+
+describe("Fail closed Retell authentication", () => {
+  it("rejects requests in production when signing key is missing", async () => {
+    const { authenticateRetellRequest, retellAuthFailure } = await import(
+      "@/server/retell-request"
+    );
+    const envObj = process.env as Record<string, string | undefined>;
+    const original = envObj.NODE_ENV;
+    try {
+      envObj.NODE_ENV = "production";
+      const result = authenticateRetellRequest("{}", null, null);
+      expect(result).toBe("not_configured");
+      const response = retellAuthFailure(result);
+      expect(response?.status).toBe(503);
+    } finally {
+      envObj.NODE_ENV = original;
+    }
+  });
+
+  it("permits unsigned requests in non-production when signing key is unset", async () => {
+    const { authenticateRetellRequest, retellAuthFailure } = await import(
+      "@/server/retell-request"
+    );
+    const envObj = process.env as Record<string, string | undefined>;
+    const original = envObj.NODE_ENV;
+    try {
+      envObj.NODE_ENV = "development";
+      const result = authenticateRetellRequest("{}", null, null);
+      expect(result).toBe("unsigned_allowed");
+      expect(retellAuthFailure(result)).toBeNull();
+    } finally {
+      envObj.NODE_ENV = original;
+    }
+  });
+});
+
