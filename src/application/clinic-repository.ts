@@ -69,7 +69,14 @@ export interface ClinicRepository {
     from: Date,
     limit: number,
   ): Promise<UpcomingAppointment[]>;
+  createPatient(input: {
+    dateOfBirth: string;
+    fullName: string;
+    id: string;
+    phoneE164: string;
+  }): Promise<PatientRecord>;
   findPatient(patientId: string): Promise<PatientRecord | null>;
+  findPatientByPhone(phone: string): Promise<PatientRecord | null>;
   findVerifiedPatient(
     fullName: string,
     dateOfBirth: string,

@@ -1,5 +1,5 @@
-// Implements the five voice-agent tools independently of HTTP and Retell transport details.
-// Every outcome includes concise prose the agent can safely read to a caller.
+import { createHash } from "node:crypto";
+
 import type { TimeInterval } from "@/domain/availability";
 import {
   CalendarUnavailableError,
@@ -25,6 +25,7 @@ import type {
   BookAppointmentInput,
   CancelAppointmentInput,
   CheckAvailabilityInput,
+  CreatePatientInput,
   FindPatientInput,
   ListDoctorsInput,
   ListPatientAppointmentsInput,
@@ -136,6 +137,79 @@ export class AppointmentToolService {
       "Thank you. I verified the patient record.",
       { patient_id: patient.id, patient_name: patient.fullName },
     );
+  }
+
+  async createPatient(input: CreatePatientInput): Promise<ToolResponse> {
+    const patientId = deterministicUuid(input.idempotency_key);
+
+    const existingByNameAndDob = await this.repository.findVerifiedPatient(
+      input.full_name,
+      input.date_of_birth,
+    );
+    if (existingByNameAndDob) {
+      if (existingByNameAndDob.id === patientId) {
+        return toolSuccess(
+          "patient_created",
+          "I've created your patient record. Let's continue with scheduling your appointment.",
+          {
+            patient_id: patientId,
+            patient_name: existingByNameAndDob.fullName,
+          },
+        );
+      }
+      return toolFailure(
+        "cannot_create_patient",
+        "I can't create that record by phone, please call the front desk.",
+      );
+    }
+
+    const existingByPhone = await this.repository.findPatientByPhone(
+      input.phone,
+    );
+    if (existingByPhone) {
+      if (existingByPhone.id === patientId) {
+        return toolSuccess(
+          "patient_created",
+          "I've created your patient record. Let's continue with scheduling your appointment.",
+          { patient_id: patientId, patient_name: existingByPhone.fullName },
+        );
+      }
+      return toolFailure(
+        "cannot_create_patient",
+        "I can't create that record by phone, please call the front desk.",
+      );
+    }
+
+    try {
+      const patient = await this.repository.createPatient({
+        id: patientId,
+        fullName: input.full_name.trim(),
+        dateOfBirth: input.date_of_birth,
+        phoneE164: input.phone,
+      });
+      return toolSuccess(
+        "patient_created",
+        "I've created your patient record. Let's continue with scheduling your appointment.",
+        { patient_id: patient.id, patient_name: patient.fullName },
+      );
+    } catch (error) {
+      const code = getPostgresErrorCode(error);
+      if (code === "23505") {
+        const check = await this.repository.findPatient(patientId);
+        if (check) {
+          return toolSuccess(
+            "patient_created",
+            "I've created your patient record. Let's continue with scheduling your appointment.",
+            { patient_id: check.id, patient_name: check.fullName },
+          );
+        }
+        return toolFailure(
+          "cannot_create_patient",
+          "I can't create that record by phone, please call the front desk.",
+        );
+      }
+      throw error;
+    }
   }
 
   async checkAvailability(
@@ -471,4 +545,9 @@ function appointmentData(
 
 function byStartTime(left: OfferedSlot, right: OfferedSlot): number {
   return left.start_at.localeCompare(right.start_at);
+}
+
+function deterministicUuid(source: string): string {
+  const hex = createHash("sha256").update(source).digest("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }

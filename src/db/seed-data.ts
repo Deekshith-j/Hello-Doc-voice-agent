@@ -99,6 +99,46 @@ export const seedPatients = patientSchema.array().parse([
     dateOfBirth: "1970-12-02",
     phoneE164: "+15555550108",
   },
+  {
+    fullName: "Taylor Reed",
+    dateOfBirth: "1985-03-15",
+    phoneE164: "+15555550109",
+  },
+  {
+    fullName: "Taylor Reed",
+    dateOfBirth: "1998-11-22",
+    phoneE164: "+15555550110",
+  },
+  {
+    fullName: "Jordan Future",
+    dateOfBirth: "1991-06-10",
+    phoneE164: "+15555550111",
+  },
+  {
+    fullName: "Morgan Pastonly",
+    dateOfBirth: "1984-08-25",
+    phoneE164: "+15555550112",
+  },
+  {
+    fullName: "Casey Noappt",
+    dateOfBirth: "1996-01-30",
+    phoneE164: "+15555550113",
+  },
+  {
+    fullName: "Riley Fakeuser",
+    dateOfBirth: "1978-05-14",
+    phoneE164: "+15555550114",
+  },
+  {
+    fullName: "Avery Demodata",
+    dateOfBirth: "2000-12-05",
+    phoneE164: "+15555550115",
+  },
+  {
+    fullName: "Quinn Testpatient",
+    dateOfBirth: "1993-04-18",
+    phoneE164: "+15555550116",
+  },
 ]);
 
 export const seedRules = ruleSchema.array().parse([

@@ -9,6 +9,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const voiceConnected = Boolean(getRetellConfig()?.agentId);
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
+      <div className="border-b border-warning/30 bg-warning/10 px-4 py-1.5 text-center text-xs font-medium text-warning-foreground">
+        Use fake details only. Dashboard is public.
+      </div>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <Sidebar voiceConnected={voiceConnected} />
         <div className="flex min-w-0 flex-1 flex-col">

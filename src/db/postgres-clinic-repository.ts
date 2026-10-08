@@ -49,6 +49,37 @@ export class PostgresClinicRepository
     await this.sql`SELECT 1`;
   }
 
+  async createPatient(input: {
+    dateOfBirth: string;
+    fullName: string;
+    id: string;
+    phoneE164: string;
+  }): Promise<PatientRecord> {
+    const rows = await this.sql<PatientRecord[]>`
+      INSERT INTO patients (id, full_name, date_of_birth, phone_e164)
+      VALUES (${input.id}, ${input.fullName.trim()}, ${input.dateOfBirth}, ${input.phoneE164})
+      ON CONFLICT (id) DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        date_of_birth = EXCLUDED.date_of_birth,
+        phone_e164 = EXCLUDED.phone_e164,
+        updated_at = now()
+      RETURNING id, full_name AS "fullName"
+    `;
+    const row = rows[0];
+    if (!row) throw new Error("The patient insert returned no row.");
+    return row;
+  }
+
+  async findPatientByPhone(phone: string): Promise<PatientRecord | null> {
+    const rows = await this.sql<PatientRecord[]>`
+      SELECT id, full_name AS "fullName"
+      FROM patients
+      WHERE phone_e164 = ${phone}
+      LIMIT 1
+    `;
+    return rows[0] ?? null;
+  }
+
   async findVerifiedPatient(
     fullName: string,
     dateOfBirth: string,

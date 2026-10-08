@@ -88,3 +88,12 @@ export const weekdayNames = [
   "Fri",
   "Sat",
 ] as const;
+
+export function maskPhone(phone: string): string {
+  if (!phone) return "";
+  const trimmed = phone.trim();
+  if (trimmed.length <= 2) return trimmed;
+  const last2 = trimmed.slice(-2);
+  const maskedPrefix = "•".repeat(trimmed.length - 2);
+  return `${maskedPrefix}${last2}`;
+}

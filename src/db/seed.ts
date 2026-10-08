@@ -12,8 +12,6 @@ if (target !== "main" && target !== "test") {
   process.exit(1);
 }
 
-console.log(`[db:seed] Target: ${target}`);
-
 const databaseUrl =
   target === "main"
     ? (process.env.DIRECT_URL ?? process.env.DATABASE_URL)
@@ -24,5 +22,8 @@ if (!databaseUrl) {
     `Target '${target}' requires ${target === "main" ? "DIRECT_URL or DATABASE_URL" : "TEST_DATABASE_URL"} to be configured.`,
   );
 }
+
+const targetHost = new URL(databaseUrl).host;
+console.log(`[db:seed] Target host: ${targetHost}`);
 
 console.log(await seedDatabase(databaseUrl));

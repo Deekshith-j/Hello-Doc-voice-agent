@@ -49,6 +49,66 @@ export const findPatientSchema = z
   })
   .strict();
 
+export function normalizePhone(raw: string): string {
+  const trimmed = raw.trim();
+  const cleaned = trimmed.replace(/[\s\-().]/g, "");
+  if (cleaned.startsWith("+")) {
+    return `+${cleaned.slice(1).replace(/\D/g, "")}`;
+  }
+  const digitsOnly = cleaned.replace(/\D/g, "");
+  if (digitsOnly.length === 10) {
+    return `+1${digitsOnly}`;
+  }
+  if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
+    return `+${digitsOnly}`;
+  }
+  return `+${digitsOnly}`;
+}
+
+export function isE164(phone: string): boolean {
+  return /^\+[1-9]\d{6,14}$/.test(phone);
+}
+
+function isValidPastDate(val: string): boolean {
+  const parts = val.split("-").map(Number);
+  if (parts.length !== 3) return false;
+  const [year, month, day] = parts;
+  if (!year || !month || !day) return false;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return false;
+  }
+  const now = new Date();
+  return date.getTime() < now.getTime() && year >= 1880;
+}
+
+export const createPatientSchema = z
+  .object({
+    date_of_birth: z.iso
+      .date()
+      .describe("Caller's date of birth as YYYY-MM-DD.")
+      .refine(isValidPastDate, {
+        message: "Date of birth must be a real past date.",
+      }),
+    full_name: z
+      .string()
+      .trim()
+      .min(2, { message: "Name must have at least 2 characters." })
+      .max(100)
+      .describe("Caller's full name."),
+    phone: z
+      .string()
+      .trim()
+      .describe("Caller's phone number.")
+      .transform(normalizePhone)
+      .refine(isE164, { message: "Phone number must be a valid phone number." }),
+  })
+  .strict();
+
 export const checkAvailabilitySchema = z
   .object({
     doctor_id: z
@@ -113,6 +173,9 @@ export const cancelAppointmentSchema = z
 
 export type ListDoctorsInput = z.infer<typeof listDoctorsSchema>;
 export type FindPatientInput = z.infer<typeof findPatientSchema>;
+export type CreatePatientInput = z.infer<typeof createPatientSchema> & {
+  idempotency_key: string;
+};
 export type CheckAvailabilityInput = z.infer<typeof checkAvailabilitySchema>;
 export type BookAppointmentInput = z.infer<typeof bookAppointmentSchema> & {
   idempotency_key: string;

@@ -6,6 +6,7 @@ import {
   bookAppointmentSchema,
   cancelAppointmentSchema,
   checkAvailabilitySchema,
+  createPatientSchema,
   findPatientSchema,
   listDoctorsSchema,
   listPatientAppointmentsSchema,
@@ -46,6 +47,14 @@ const tools: readonly ToolSpec[] = [
     executionMessage: "Let me pull up your record.",
     description:
       "Verify the caller using full name and date of birth. Required before any appointment action.",
+  },
+  {
+    name: "create_patient",
+    path: "create-patient",
+    schema: createPatientSchema,
+    executionMessage: "Setting up your patient profile now.",
+    description:
+      "Register a new patient with their full name, date of birth (YYYY-MM-DD), and phone number. Only use after verification fails twice and caller gives explicit consent.",
   },
   {
     name: "check_availability",
@@ -177,7 +186,7 @@ ${calendar}
 
 ## How to run the call
 1. Ask what the caller needs.
-2. Before any appointment action, verify identity: ask for the caller's full name and ask them to spell their name; ask for their date of birth, and read the date of birth back to confirm. Then call find_patient. If verification fails, ask them to repeat and spell both once. If it fails again, say you can't access the record by phone and suggest calling the front desk during office hours. Never reveal whether a record exists.
+2. Before any appointment action, verify identity: ask for the caller's full name and ask them to spell their name; ask for their date of birth, and read the date of birth back to confirm. Then call find_patient. If verification fails, ask them to repeat and spell both once. If find_patient fails twice, offer registration: ask the caller to spell their name, ask for their phone number, read the date of birth and phone number back to confirm, get a clear yes from the caller, and only then call create_patient. Never create a record without an explicit yes from the caller. Once registered, continue to booking. If registration fails or they decline, say you can't access or create the record by phone and suggest calling the front desk during office hours. Never reveal whether a record exists.
 3. Booking: learn the reason and any doctor or specialty preference. Call list_doctors if they name a doctor. Call check_availability for a window that matches what they asked for (default: the next 7 days). Offer at most three options using each slot's "when" text. After they choose, repeat the doctor, day, and time and ask for a clear yes. Only then call book_appointment with that slot's doctor_id, start_at, and end_at copied exactly.
 4. Rescheduling or cancelling: call list_patient_appointments, confirm which appointment, then for a reschedule find a new slot as in step 3. Get a clear yes before calling reschedule_appointment or cancel_appointment.
 5. After any change, read back the result in one sentence and ask if there is anything else.

@@ -179,7 +179,7 @@ async function recordToolCall<TSchema extends z.ZodType>(
       providerCallId: entry.callId,
       requestId: entry.requestId,
       toolName: tool.name,
-      arguments: entry.args ?? {},
+      arguments: sanitizeArguments(entry.args ?? {}),
       result: entry.result,
       latencyMs: Math.round(performance.now() - entry.startedAt),
       verifiedPatientId: tool.linksVerifiedPatient
@@ -217,6 +217,15 @@ function parseJson(rawBody: string): unknown {
   } catch {
     throw new InvalidJsonError();
   }
+}
+
+function sanitizeArguments(args: unknown): unknown {
+  if (typeof args !== "object" || args === null) return args;
+  const copy = { ...(args as Record<string, unknown>) };
+  if ("full_name" in copy) copy.full_name = "[REDACTED]";
+  if ("date_of_birth" in copy) copy.date_of_birth = "[REDACTED]";
+  if ("phone" in copy) copy.phone = "[REDACTED]";
+  return copy;
 }
 
 function verifiedPatientId(result: ToolResponse): string | null {
