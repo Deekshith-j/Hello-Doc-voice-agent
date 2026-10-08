@@ -1,199 +1,167 @@
 # Docto — AI Clinic Appointment Voice Agent
 
-Docto is a production-grade, voice-driven clinic appointment front desk application. It integrates [Retell AI](https://retellai.com) for natural conversational voice interaction, PostgreSQL / [Supabase](https://supabase.com) with database-enforced concurrency invariants against double-booking, and Google Calendar for two-way schedule synchronization.
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=flat-square&logo=postgresql)](https://supabase.com/)
+[![Retell AI](https://img.shields.io/badge/Retell_AI-Voice_Agent-7c3aed?style=flat-square)](https://retellai.com/)
+[![Tests](https://img.shields.io/badge/Tests-78_Passed-success?style=flat-square&logo=vitest)](https://vitest.dev/)
+
+Docto is an autonomous AI voice receptionist for clinical front desks. Powered by **Retell AI** (`gpt-6-luna`), PostgreSQL concurrency-safe exclusion constraints, and two-way Google Calendar synchronization, Docto handles patient lookup, availability checking, scheduling, rescheduling, and cancellations over phone and browser web calls in real time.
+
+Live Deployment: [https://docto-agent.vercel.app](https://docto-agent.vercel.app)
+
+---
+
+## Application Preview
+
+![Docto Live Call Workspace](docs/images/dashboard.png)
+
+*The live front-desk workspace: real-time call stage, live transcript stream, tool execution audit trail, and clinic agenda.*
+
+---
+
+## Key Features
+
+- **Conversational Voice Scheduling**: Real-time natural phone & browser audio calls powered by Retell AI with sub-second latency and interruption handling.
+- **Race-Condition Proof Double-Booking Prevention**: PostgreSQL GiST exclusion constraints (`appointments_no_doctor_overlap`) enforce database-level slot locks across concurrent callers.
+- **Strict Server-Derived Idempotency**: Cryptographic hashes of `call_id + patient_id + doctor_id + start_at` guarantee repeat tool calls never duplicate records.
+- **Two-Way External Calendar Sync**: Non-blocking Google Calendar integration that records bookings locally immediately, then syncs external calendars with background retries.
+- **Real-Time Operator Observability**: Interactive dashboard streaming live call transcripts, step-by-step tool invocations, upcoming appointments, and provider shifts.
+- **Automated Tool Contract Eval Suite**: Benchmark test harness evaluating tool schemas, availability accuracy, and edge-case multi-turn scenarios.
 
 ---
 
 ## Architecture Overview
 
+```text
+                  ┌────────────────────────┐
+                  │    Patient / Caller    │
+                  └───────────┬────────────┘
+                              │ Voice (WebRTC / Telephony)
+                              ▼
+                  ┌────────────────────────┐
+                  │    Retell AI Voice     │
+                  └───────────┬────────────┘
+                              │ Signed HTTP Function Calls & Webhooks
+                              ▼
+                  ┌────────────────────────┐
+                  │   Next.js API Engine   │
+                  │   (/api/tools/*)       │
+                  └─────┬────────────┬─────┘
+                        │            │
+       PostgreSQL DDL / │            │ Google Calendar API
+       GiST Range Locks │            │ Free/Busy & Event Upsert
+                        ▼            ▼
+        ┌──────────────────┐      ┌──────────────────┐
+        │ Supabase / PG    │      │ Google Calendar  │
+        │ (Truth Source)   │      │ (External Sync)  │
+        └──────────────────┘      └──────────────────┘
 ```
-                      ┌──────────────────────┐
-                      │    Patient / Caller  │
-                      └──────────┬───────────┘
-                                 │ Voice (WebRTC / Phone)
-                                 ▼
-                      ┌──────────────────────┐
-                      │    Retell AI Voice   │
-                      └──────────┬───────────┘
-                                 │ HTTP Function Tools + Signed Webhook
-                                 ▼
-                      ┌──────────────────────┐
-                      │   Next.js API Routes │
-                      │   (/api/tools/*)     │
-                      └─────┬──────────┬─────┘
-                            │          │
-         Postgres SQL /     │          │ Offline OAuth2
-         GiST Constraints   │          │ Free/Busy + Upsert
-                            ▼          ▼
-            ┌─────────────────┐      ┌─────────────────┐
-            │ Supabase / PG   │      │ Google Calendar │
-            │ (Source of Truth│      │ (External Sync) │
-            └─────────────────┘      └─────────────────┘
-```
-
-### Core Invariants & Design
-
-1. **Database as Single Source of Truth**: Postgres GiST range exclusion constraints (`appointments_no_doctor_overlap`) prevent overlapping bookings at the database engine level, eliminating race conditions even under concurrent callers.
-2. **Idempotent Operations**: All tool actions (`book-appointment`, `reschedule-appointment`, `cancel-appointment`) require caller idempotency keys and return existing bookings on network retries.
-3. **Resilient Calendar Reconciliation**: If an external calendar provider API drops or throttles, the Postgres transaction commits with `calendar_sync_status = 'pending'`, and a background reconciliation cron route (`/api/internal/calendar-sync`) retries until synchronized.
-4. **Restrained Front-Desk Dashboard**: A clean operator interface built with Geist typography, semantic tokens, dark/light theme persistence, live web call stage, real-time tool audit timeline, and agenda review.
 
 ---
 
-## Technology Stack
+## Tech Stack
 
-- **Framework**: Next.js 16 (App Router, Server Actions, Route Handlers)
-- **Database & Backend**: PostgreSQL / Supabase with `postgres.js` and Drizzle ORM schemas
-- **Voice Agent Engine**: Retell AI (`retell-client-js-sdk` v3)
-- **External Calendars**: Google Calendar API via `google-auth-library`
-- **Testing & Evals**: Vitest (wire-protocol Postgres tests) & Custom Tool Contract Eval Suite
-- **Styling**: Tailwind CSS v4 with custom semantic tokens and animations
+| Layer | Technologies |
+|---|---|
+| **Frontend & UI** | Next.js 16 (App Router), React 19, Tailwind CSS v4, Lucide Icons |
+| **Backend API** | Next.js Route Handlers, Server Actions, Node.js crypto primitives |
+| **Database** | PostgreSQL / Supabase, `postgres.js`, Drizzle ORM, `btree_gist` extension |
+| **Voice AI** | Retell AI (`retell-client-js-sdk` v3, `retell-sdk`, `gpt-6-luna`) |
+| **Integrations** | Google Calendar API (`google-auth-library` offline OAuth2) |
+| **Testing** | Vitest (78 unit/integration tests with wire-protocol isolation) |
 
 ---
 
-## Getting Started Locally
+## Quick Start
 
-### 1. Prerequisites
-
-- Node.js >= 24.0.0
-- npm >= 10.0.0
-
-### 2. Install Dependencies
+### 1. Clone & Install
 
 ```bash
+git clone https://github.com/Deekshith-j/Hello-Doc-voice-agent.git
+cd Hello-Doc-voice-agent
 npm install
 ```
 
-### 3. Local Database Setup
+### 2. Configure Environment
 
-Run the embedded PostgreSQL instance (requires zero external setup):
-
-```bash
-npm run db:local
-```
-
-This boots an embedded PostgreSQL instance on port `54329`, runs migrations, and seeds synthetic demo doctors and patients into `.pglite/`.
-
-Copy the printed connection URL into `.env.local`:
+Copy `.env.example` to `.env.local`:
 
 ```bash
-DATABASE_URL=postgresql://postgres@127.0.0.1:54329/postgres
+cp .env.example .env.local
 ```
 
-### 4. Run Development Server
+Key environment variables:
+
+```env
+# Database (Supabase PostgreSQL pooled or direct URL)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
+
+# Retell AI
+RETELL_API_KEY=your_retell_api_key
+RETELL_AGENT_ID=your_retell_agent_id
+RETELL_LLM_ID=your_retell_llm_id
+
+# Public URL (for registering Retell webhook & tool URLs)
+PUBLIC_BASE_URL=https://docto-agent.vercel.app
+
+# Optional Calendar Sync & Background Reconciliation
+CRON_SECRET=your_random_32_character_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REFRESH_TOKEN=your_offline_refresh_token
+```
+
+### 3. Database Migrations & Seed
+
+```bash
+npm run db:migrate
+npm run db:seed -- --target=main
+```
+
+### 4. Provision Retell Agent
+
+To configure the LLM prompt, voice, and all 7 tool endpoints on Retell:
+
+```bash
+npm run retell:setup
+```
+
+### 5. Run Locally
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) to view the Live Call workspace.
 
 ---
 
-## Supabase Database Setup
+## Quality Verification
 
-When connecting Docto to Supabase:
-
-1. **Create a Supabase Project**: Go to [supabase.com](https://supabase.com) and create a new project.
-2. **Get Connection String**: In your Supabase Dashboard:
-   - Go to **Project Settings** → **Database** → **Connection string**.
-   - Select **URI** (Transaction pooler on port 6543 or Session pooler on port 5432).
-   - Copy the URI and replace `[YOUR-PASSWORD]` with your database password.
-3. **Set Environment Variable**:
-   ```env
-   DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?sslmode=require
-   ```
-4. **Run Migrations & Seed**:
-   ```bash
-   npm run db:migrate
-   npm run db:seed
-   ```
-   The migrations will automatically enable `btree_gist` and create the doctors, patients, appointments, availability rules, and call logs.
-
----
-
-## Retell AI Configuration
-
-1. **Obtain API Key**:
-   - Create an account on [retellai.com](https://retellai.com).
-   - Generate an API Key with the **webhook badge enabled** (used to sign incoming tool requests and webhooks).
-2. **Set Environment Variables**:
-   ```env
-   RETELL_API_KEY=your_retell_api_key
-   PUBLIC_BASE_URL=https://your-domain.vercel.app
-   ```
-3. **Automated Agent Setup**:
-   Once deployed or tunneled (e.g. ngrok), run:
-
-   ```bash
-   npm run retell:setup
-   ```
-
-   This automatically provisions the Retell LLM with all 7 clinic tools (`list_doctors`, `find_patient`, `check_availability`, `book_appointment`, `list_patient_appointments`, `reschedule_appointment`, `cancel_appointment`), system prompts, and sets your webhook endpoint.
-
-4. Add the output `RETELL_AGENT_ID` and `RETELL_LLM_ID` to `.env.local` or Vercel environment variables.
-
----
-
-## Google Calendar Integration (Optional)
-
-1. In Google Cloud Console, enable the **Google Calendar API**.
-2. Create an **OAuth 2.0 Client ID** (Web Application).
-3. Authorize offline access to obtain a refresh token with `https://www.googleapis.com/auth/calendar` scope.
-4. Set in your environment:
-   ```env
-   GOOGLE_CLIENT_ID=your_client_id
-   GOOGLE_CLIENT_SECRET=your_client_secret
-   GOOGLE_REFRESH_TOKEN=your_offline_refresh_token
-   ```
-5. Doctors in the database with `calendar_provider = 'google'` and an `external_calendar_id` (Google Calendar ID / email) will automatically have availability checked and appointments synced.
-
----
-
-## Quality Verification Commands
-
-Run the full verification suite before committing:
+Run the verification suite:
 
 ```bash
-# Type-check TypeScript & generate route types
+# Typecheck TypeScript
 npm run typecheck
 
-# ESLint inspection (zero warnings allowed)
+# Lint (zero warnings allowed)
 npm run lint
 
-# Prettier code formatting check
-npm run format:check
-
-# Unit & integration wire-protocol database tests (65 tests)
+# Run all 78 unit & integration tests
 npm test
 
 # Run tool contract evaluation harness
 npm run eval
 
-# Next.js production build verification
+# Production build verification
 npm run build
 ```
 
 ---
 
-## Vercel Deployment
-
-1. Push your repository to GitHub.
-2. Import the project into Vercel.
-3. Configure the Environment Variables in Vercel:
-   - `DATABASE_URL`: Supabase PostgreSQL pooled connection URL.
-   - `CRON_SECRET`: 32+ character random string for the calendar sync cron route.
-   - `PUBLIC_BASE_URL`: `https://<your-project>.vercel.app`
-   - `RETELL_API_KEY`: Retell API key.
-   - `RETELL_AGENT_ID`: ID returned from `npm run retell:setup`.
-   - `WEB_CALLS_ENABLED`: (Optional) Kill switch for web calls (default: `true`).
-   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` (optional).
-4. Deploy! `vercel.json` will automatically schedule `/api/internal/calendar-sync` to run daily.
-
----
-
 ## Known Limitations
 
-- **Public Demo Environment**: The dashboard and Live Call workspace are open with no login for demonstration purposes. Only synthetic seed data is exposed. Authentication must be enabled before connecting or managing real patient records or protected health information (PHI).
-- **Web Call Rate Limiting**: The public browser web call endpoint (`/api/retell/web-call`) is rate limited to 5 calls per IP per hour and 30 calls daily overall to protect Retell API usage.
-- **External Calendar Sync**: External Google Calendar updates rely on provider OAuth refresh tokens; local PostgreSQL records commit first as `pending` if Google Calendar drops.
+- **Public Demo Environment**: The dashboard and Live Call workspace are open without login for demo purposes. Only synthetic seed records are exposed. Authentication must be enabled before connecting real patient data or protected health information (PHI).
+- **Public Web Call Rate Limiting**: The browser web call endpoint (`/api/retell/web-call`) is rate limited to 5 calls per IP per hour and 30 calls daily overall to protect voice API quotas.
+- **External Calendar Sync**: External Google Calendar updates rely on provider OAuth refresh tokens; local PostgreSQL records commit first as `pending` if Google Calendar is unavailable.
