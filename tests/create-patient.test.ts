@@ -11,6 +11,7 @@ import { signRetellPayload } from "@/integrations/retell/signature";
 
 import { FakeCalendar } from "./support/fake-calendar";
 import {
+  DOCTOR_ID,
   startTestDatabase,
   type TestDatabase,
 } from "./support/test-database";
@@ -289,5 +290,172 @@ describe("create_patient", () => {
     expect(recordedArgs?.phone).toBe("[REDACTED]");
 
     logSpy.mockRestore();
+  });
+
+  it("creates a patient through the route when a valid phone is provided", async () => {
+    const route = createToolRoute(
+      {
+        name: "create_patient",
+        schema: createPatientSchema,
+        linksVerifiedPatient: true,
+        execute: async (srv, input, meta) => {
+          return srv.createPatient({
+            ...input,
+            idempotency_key: `${meta.callId}-${input.phone}`,
+          });
+        },
+      },
+      () => ({
+        service,
+        retellSigningKey: "signing-key-test",
+        consumeRateLimit: async () => ({
+          allowed: true,
+          remaining: 10,
+          retryAfterSeconds: 60,
+        }),
+        callLog: {
+          recordCallStarted: async () => {},
+          recordCallEnded: async () => {},
+          recordCallAnalyzed: async () => {},
+          recordToolCall: async () => {},
+        },
+      }),
+    );
+
+    const body = {
+      call: { call_id: "call_route_phone" },
+      args: {
+        full_name: "Route Patient",
+        date_of_birth: "1994-06-20",
+        phone: "+15555550170",
+      },
+    };
+    const raw = JSON.stringify(body);
+    const signature = signRetellPayload(raw, "signing-key-test");
+    const response = await route(
+      new Request("http://localhost/api/tools/create-patient", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-retell-signature": signature,
+        },
+        body: raw,
+      }),
+    );
+    expect(response.status).toBe(200);
+    const resBody = (await response.json()) as {
+      code: string;
+      data?: { patient_id: string };
+      ok: boolean;
+    };
+    expect(resBody.ok).toBe(true);
+    expect(resBody.code).toBe("patient_created");
+    expect(resBody.data?.patient_id).toBeDefined();
+  });
+
+  it("rejects creation through the route when phone is missing (matching database NOT NULL constraint)", async () => {
+    const route = createToolRoute(
+      {
+        name: "create_patient",
+        schema: createPatientSchema,
+        linksVerifiedPatient: true,
+        execute: async (srv, input, meta) => {
+          return srv.createPatient({
+            ...input,
+            idempotency_key: `${meta.callId}-${input.phone}`,
+          });
+        },
+      },
+      () => ({
+        service,
+        retellSigningKey: "signing-key-test",
+        consumeRateLimit: async () => ({
+          allowed: true,
+          remaining: 10,
+          retryAfterSeconds: 60,
+        }),
+        callLog: {
+          recordCallStarted: async () => {},
+          recordCallEnded: async () => {},
+          recordCallAnalyzed: async () => {},
+          recordToolCall: async () => {},
+        },
+      }),
+    );
+
+    const body = {
+      call: { call_id: "call_route_nophone" },
+      args: {
+        full_name: "NoPhone Patient",
+        date_of_birth: "1994-06-20",
+      },
+    };
+    const raw = JSON.stringify(body);
+    const signature = signRetellPayload(raw, "signing-key-test");
+    const response = await route(
+      new Request("http://localhost/api/tools/create-patient", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-retell-signature": signature,
+        },
+        body: raw,
+      }),
+    );
+    expect(response.status).toBe(200);
+    const resBody = (await response.json()) as {
+      code: string;
+      data?: { issues: string[] };
+      ok: boolean;
+    };
+    expect(resBody.ok).toBe(false);
+    expect(resBody.code).toBe("invalid_request");
+    expect(
+      resBody.data?.issues.some((issue) =>
+        issue.toLowerCase().includes("phone"),
+      ),
+    ).toBe(true);
+  });
+
+  it("allows a registered patient to immediately be verified by find_patient and book an appointment", async () => {
+    // 1. Register new patient
+    const regResult = await service.createPatient({
+      full_name: "E2E Registered",
+      date_of_birth: "1991-03-25",
+      phone: "+15555550171",
+      idempotency_key: "e2e-reg-1",
+    });
+    expect(regResult.ok).toBe(true);
+    expect(regResult.code).toBe("patient_created");
+    const patientId = (regResult.data as { patient_id: string }).patient_id;
+
+    // 2. Immediate verification by find_patient
+    const findResult = await service.findPatient({
+      full_name: "E2E Registered",
+      date_of_birth: "1991-03-25",
+    });
+    expect(findResult.ok).toBe(true);
+    expect(findResult.code).toBe("patient_verified");
+    expect((findResult.data as { patient_id: string }).patient_id).toBe(
+      patientId,
+    );
+
+    // 3. Booking appointment with verified patient ID
+    const bookResult = await service.bookAppointment({
+      doctor_id: DOCTOR_ID,
+      patient_id: patientId,
+      reason: "Initial consultation",
+      start_at: "2027-01-12T14:00:00.000Z",
+      end_at: "2027-01-12T14:30:00.000Z",
+      idempotency_key: "e2e-book-1",
+    });
+    expect(bookResult.ok).toBe(true);
+    expect(bookResult.code).toBe("appointment_booked");
+
+    const rows = await database.sql<{ patient_id: string; status: string }[]>`
+      SELECT status, patient_id FROM appointments WHERE idempotency_key = 'e2e-book-1'
+    `;
+    expect(rows[0]?.status).toBe("booked");
+    expect(rows[0]?.patient_id).toBe(patientId);
   });
 });
