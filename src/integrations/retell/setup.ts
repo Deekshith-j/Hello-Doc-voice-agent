@@ -24,7 +24,7 @@ const setupSchema = z.object({
     .transform((value) => value.replace(/\/+$/, "")),
   RETELL_LLM_ID: z.string().optional(),
   RETELL_AGENT_ID: z.string().optional(),
-  RETELL_LLM_MODEL: z.string().default("gpt-4.1-mini"),
+  RETELL_LLM_MODEL: z.string().default("gpt-6-luna"),
   RETELL_VOICE_ID: z.string().default("retell-Cimo"),
 });
 
