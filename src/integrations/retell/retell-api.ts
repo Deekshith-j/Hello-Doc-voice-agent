@@ -32,12 +32,16 @@ export class RetellApi {
 
   async createWebCall(
     agentId: string,
-    metadata: Record<string, string>,
+    metadata?: Record<string, string>,
+    retellLlmDynamicVariables?: Record<string, string | number>,
   ): Promise<WebCallSession> {
     const payload = webCallSchema.parse(
       await this.request("POST", "/v3/create-web-call", {
         agent_id: agentId,
-        metadata,
+        metadata: metadata ?? {},
+        ...(retellLlmDynamicVariables
+          ? { retell_llm_dynamic_variables: retellLlmDynamicVariables }
+          : {}),
       }),
     );
     return { accessToken: payload.access_token, callId: payload.call_id };

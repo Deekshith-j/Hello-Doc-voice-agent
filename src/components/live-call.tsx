@@ -129,20 +129,37 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
           if (update.transcript) setTurns(toTurns(update.transcript));
         },
       );
-      client.on("error", () => {
-        setError("The call was interrupted. Check your connection and retry.");
+      client.on("error", (err: unknown) => {
+        console.error("[RetellWebClient error]", {
+          callId: body.call_id,
+          error: err,
+        });
+        const detail =
+          typeof err === "string"
+            ? err
+            : err instanceof Error
+              ? err.message
+              : typeof err === "object" && err !== null && "message" in err
+                ? String((err as { message: unknown }).message)
+                : "Connection interrupted";
+        setError(`Call interrupted: ${detail}. Check your connection and retry.`);
         client.stopCall();
       });
 
       setCallId(body.call_id);
       await client.startCall({ accessToken: body.access_token });
     } catch (caught) {
+      console.error("[startCall exception]", {
+        error: caught,
+      });
       clientRef.current?.stopCall();
       clientRef.current = null;
       setError(
         caught instanceof DOMException && caught.name === "NotAllowedError"
           ? "Microphone access was blocked. Allow it in the browser and retry."
-          : "The call couldn't be started.",
+          : caught instanceof Error
+            ? `Failed to start call: ${caught.message}`
+            : "The call couldn't be started.",
       );
       setStatus("idle");
     }

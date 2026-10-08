@@ -8,7 +8,20 @@ const ONE_HOUR_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(request: Request): Promise<Response> {
+  const config = getRetellConfig();
+  const hasApiKey = Boolean(config?.apiKey);
+  const hasAgentId = Boolean(config?.agentId);
+
   if (!areWebCallsEnabled()) {
+    console.warn(
+      JSON.stringify({
+        event: "web_call_attempt",
+        status: 503,
+        reason: "web_calls_disabled",
+        hasApiKey,
+        hasAgentId,
+      }),
+    );
     return Response.json(
       {
         ok: false,
@@ -19,8 +32,16 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const config = getRetellConfig();
   if (!config?.agentId) {
+    console.warn(
+      JSON.stringify({
+        event: "web_call_attempt",
+        status: 503,
+        reason: "retell_not_configured",
+        hasApiKey,
+        hasAgentId: false,
+      }),
+    );
     return Response.json(
       {
         ok: false,
@@ -45,6 +66,15 @@ export async function POST(request: Request): Promise<Response> {
     { maxRequests: 5, windowMs: ONE_HOUR_MS },
   );
   if (!ipLimit.allowed) {
+    console.warn(
+      JSON.stringify({
+        event: "web_call_rate_limited",
+        limitType: "ip",
+        status: 429,
+        hasApiKey,
+        hasAgentId,
+      }),
+    );
     return Response.json(
       {
         ok: false,
@@ -66,6 +96,15 @@ export async function POST(request: Request): Promise<Response> {
     { maxRequests: 30, windowMs: ONE_DAY_MS },
   );
   if (!globalLimit.allowed) {
+    console.warn(
+      JSON.stringify({
+        event: "web_call_rate_limited",
+        limitType: "global",
+        status: 429,
+        hasApiKey,
+        hasAgentId,
+      }),
+    );
     return Response.json(
       {
         ok: false,
@@ -84,6 +123,16 @@ export async function POST(request: Request): Promise<Response> {
     const session = await new RetellApi(config.apiKey).createWebCall(
       config.agentId,
       { source: "dashboard" },
+      { emergency_number: "911" },
+    );
+    console.info(
+      JSON.stringify({
+        event: "web_call_created",
+        status: 200,
+        callId: session.callId,
+        hasApiKey,
+        hasAgentId,
+      }),
     );
     return Response.json({
       ok: true,
@@ -95,12 +144,22 @@ export async function POST(request: Request): Promise<Response> {
       JSON.stringify({
         event: "web_call",
         outcome: "failed",
-        status: error instanceof RetellApiError ? error.status : undefined,
+        status: error instanceof RetellApiError ? error.status : 502,
+        hasApiKey,
+        hasAgentId,
         error: error instanceof Error ? error.name : "unknown",
+        errorMessage: error instanceof Error ? error.message : "unknown",
       }),
     );
     return Response.json(
-      { ok: false, code: "retell_unavailable" },
+      {
+        ok: false,
+        code: "retell_unavailable",
+        message:
+          error instanceof RetellApiError
+            ? `Retell API error (${error.status})`
+            : "Retell didn't accept the call. Try again shortly.",
+      },
       { status: 502 },
     );
   }

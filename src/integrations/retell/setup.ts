@@ -50,7 +50,7 @@ if (env.RETELL_AGENT_ID) {
       env.RETELL_AGENT_ID,
       buildRetellAgent(settings, llmId),
     );
-  } catch (error) {
+  } catch {
     console.warn(
       `Could not update agent ${env.RETELL_AGENT_ID}, creating a new agent instead...`,
     );
