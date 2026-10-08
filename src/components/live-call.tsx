@@ -85,7 +85,13 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
   // Leaving the page must hang up, or the microphone stays open in the background.
   useEffect(() => () => clientRef.current?.stopCall(), []);
 
+  const isStartingRef = useRef(false);
+
   const start = useCallback(async () => {
+    if (isStartingRef.current || status === "connecting" || status === "live") {
+      return;
+    }
+    isStartingRef.current = true;
     setError(null);
     setTurns([]);
     setActivity(null);
@@ -98,15 +104,23 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
         access_token?: string;
         call_id?: string;
         code?: string;
+        created_at?: number;
+        ice_servers?: RTCIceServer[];
+        message?: string;
         ok: boolean;
+        transport?: "gateway" | "livekit";
       };
       if (!body.ok || !body.access_token || !body.call_id) {
         setError(
-          errorMessages[body.code ?? ""] ?? "The call couldn't be started.",
+          body.message ??
+            errorMessages[body.code ?? ""] ??
+            "The call couldn't be started.",
         );
         setStatus("idle");
         return;
       }
+
+      const tokenReceivedAt = performance.now();
 
       const { RetellWebClient } = await import("retell-client-js-sdk");
       const client = new RetellWebClient();
@@ -134,20 +148,55 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
           callId: body.call_id,
           error: err,
         });
-        const detail =
-          typeof err === "string"
-            ? err
-            : err instanceof Error
-              ? err.message
-              : typeof err === "object" && err !== null && "message" in err
-                ? String((err as { message: unknown }).message)
-                : "Connection interrupted";
+        let detail = "Connection interrupted";
+        if (typeof err === "string") {
+          detail = err;
+        } else if (err instanceof Error) {
+          detail = err.message;
+        } else if (typeof err === "object" && err !== null) {
+          if (
+            "message" in err &&
+            typeof (err as { message: unknown }).message === "string"
+          ) {
+            detail = (err as { message: string }).message;
+          } else if (
+            "error" in err &&
+            typeof (err as { error: unknown }).error === "string"
+          ) {
+            detail = (err as { error: string }).error;
+          } else {
+            try {
+              detail = JSON.stringify(err);
+            } catch {
+              detail = String(err);
+            }
+          }
+        }
         setError(`Call interrupted: ${detail}. Check your connection and retry.`);
         client.stopCall();
       });
 
       setCallId(body.call_id);
-      await client.startCall({ accessToken: body.access_token });
+
+      const timeBeforeStartCallMs = Math.round(
+        performance.now() - tokenReceivedAt,
+      );
+      const timeSinceCreationMs = body.created_at
+        ? Date.now() - body.created_at
+        : null;
+      console.info("[WebCall start timing]", {
+        callId: body.call_id,
+        transport: body.transport,
+        timeBetweenTokenReceiptAndStartCallMs: timeBeforeStartCallMs,
+        timeSinceServerTokenCreationMs: timeSinceCreationMs,
+      });
+
+      await client.startCall({
+        accessToken: body.access_token,
+        callId: body.call_id,
+        transport: body.transport ?? "gateway",
+        ...(body.ice_servers ? { iceServers: body.ice_servers } : {}),
+      });
     } catch (caught) {
       console.error("[startCall exception]", {
         error: caught,
@@ -162,8 +211,10 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
             : "The call couldn't be started.",
       );
       setStatus("idle");
+    } finally {
+      isStartingRef.current = false;
     }
-  }, []);
+  }, [status]);
 
   const end = useCallback(() => {
     const client = clientRef.current;

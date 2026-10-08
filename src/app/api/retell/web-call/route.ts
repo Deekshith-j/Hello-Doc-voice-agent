@@ -130,6 +130,7 @@ export async function POST(request: Request): Promise<Response> {
         event: "web_call_created",
         status: 200,
         callId: session.callId,
+        transport: session.transport,
         hasApiKey,
         hasAgentId,
       }),
@@ -138,6 +139,9 @@ export async function POST(request: Request): Promise<Response> {
       ok: true,
       access_token: session.accessToken,
       call_id: session.callId,
+      transport: session.transport,
+      ice_servers: session.iceServers,
+      created_at: Date.now(),
     });
   } catch (error) {
     console.error(

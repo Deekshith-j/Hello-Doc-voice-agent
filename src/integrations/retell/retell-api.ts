@@ -5,9 +5,17 @@ import { z } from "zod";
 const RETELL_API_BASE_URL = "https://api.retellai.com";
 const REQUEST_TIMEOUT_MS = 10_000;
 
+const iceServerSchema = z.object({
+  urls: z.union([z.string(), z.array(z.string())]),
+  username: z.string().optional(),
+  credential: z.string().optional(),
+});
+
 const webCallSchema = z.object({
   access_token: z.string().min(1),
   call_id: z.string().min(1),
+  transport: z.enum(["gateway", "livekit"]).optional().default("gateway"),
+  ice_servers: z.array(iceServerSchema).optional().default([]),
 });
 const llmSchema = z.object({ llm_id: z.string().min(1) });
 const agentSchema = z.object({ agent_id: z.string().min(1) });
@@ -19,9 +27,13 @@ export class RetellApiError extends Error {
   }
 }
 
+export type IceServer = z.infer<typeof iceServerSchema>;
+
 export interface WebCallSession {
   accessToken: string;
   callId: string;
+  transport: "gateway" | "livekit";
+  iceServers: IceServer[];
 }
 
 export class RetellApi {
@@ -44,7 +56,12 @@ export class RetellApi {
           : {}),
       }),
     );
-    return { accessToken: payload.access_token, callId: payload.call_id };
+    return {
+      accessToken: payload.access_token,
+      callId: payload.call_id,
+      transport: payload.transport,
+      iceServers: payload.ice_servers,
+    };
   }
 
   async upsertLlm(llmId: string | null, body: object): Promise<string> {
