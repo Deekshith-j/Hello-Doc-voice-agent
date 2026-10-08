@@ -182,11 +182,18 @@ npm run build
 2. Import the project into Vercel.
 3. Configure the Environment Variables in Vercel:
    - `DATABASE_URL`: Supabase PostgreSQL pooled connection URL.
-   - `DASHBOARD_PASSWORD`: Minimum 12 character passphrase for operator sign-in.
-   - `SESSION_SECRET`: 32+ character random hex string (`openssl rand -hex 32`).
    - `CRON_SECRET`: 32+ character random string for the calendar sync cron route.
    - `PUBLIC_BASE_URL`: `https://<your-project>.vercel.app`
    - `RETELL_API_KEY`: Retell API key.
    - `RETELL_AGENT_ID`: ID returned from `npm run retell:setup`.
+   - `WEB_CALLS_ENABLED`: (Optional) Kill switch for web calls (default: `true`).
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` (optional).
-4. Deploy! `vercel.json` will automatically schedule `/api/internal/calendar-sync` to run every 10 minutes.
+4. Deploy! `vercel.json` will automatically schedule `/api/internal/calendar-sync` to run daily.
+
+---
+
+## Known Limitations
+
+- **Public Demo Environment**: The dashboard and Live Call workspace are open with no login for demonstration purposes. Only synthetic seed data is exposed. Authentication must be enabled before connecting or managing real patient records or protected health information (PHI).
+- **Web Call Rate Limiting**: The public browser web call endpoint (`/api/retell/web-call`) is rate limited to 5 calls per IP per hour and 30 calls daily overall to protect Retell API usage.
+- **External Calendar Sync**: External Google Calendar updates rely on provider OAuth refresh tokens; local PostgreSQL records commit first as `pending` if Google Calendar drops.

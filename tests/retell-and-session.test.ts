@@ -7,7 +7,6 @@ import {
   verifyRetellSignature,
 } from "@/integrations/retell/signature";
 import { toCallEnded } from "@/integrations/retell/webhook-events";
-import { createSessionToken, verifySessionToken } from "@/server/session-token";
 
 const KEY = "retell-webhook-key";
 const NOW = 1_800_000_000_000;
@@ -35,28 +34,6 @@ describe("Retell signatures", () => {
     expect(
       verifyRetellSignature("{}", signature, KEY, NOW + 5 * 60_000 + 1),
     ).toBe(false);
-  });
-});
-
-describe("dashboard sessions", () => {
-  const secret = "a".repeat(32);
-
-  it("accepts its own unexpired token", async () => {
-    const token = await createSessionToken(secret, NOW);
-    expect(await verifySessionToken(token, secret, NOW + 1_000)).toBe(true);
-  });
-
-  it("rejects expired, forged, and missing tokens", async () => {
-    const token = await createSessionToken(secret, NOW);
-    expect(
-      await verifySessionToken(token, secret, NOW + 13 * 60 * 60_000),
-    ).toBe(false);
-    expect(await verifySessionToken(token, "b".repeat(32), NOW)).toBe(false);
-    const [payload] = token.split(".");
-    expect(await verifySessionToken(`${payload}.forged`, secret, NOW)).toBe(
-      false,
-    );
-    expect(await verifySessionToken(undefined, secret, NOW)).toBe(false);
   });
 });
 
@@ -147,6 +124,55 @@ describe("Fail closed Retell authentication", () => {
     } finally {
       envObj.NODE_ENV = original;
     }
+  });
+});
+
+describe("Web calls kill switch & rate limiting", () => {
+  it("enforces WEB_CALLS_ENABLED kill switch", async () => {
+    const { areWebCallsEnabled } = await import("@/config/environment");
+    const envObj = process.env as Record<string, string | undefined>;
+    const original = envObj.WEB_CALLS_ENABLED;
+    try {
+      delete envObj.WEB_CALLS_ENABLED;
+      expect(areWebCallsEnabled()).toBe(true);
+
+      envObj.WEB_CALLS_ENABLED = "false";
+      expect(areWebCallsEnabled()).toBe(false);
+
+      envObj.WEB_CALLS_ENABLED = "0";
+      expect(areWebCallsEnabled()).toBe(false);
+
+      envObj.WEB_CALLS_ENABLED = "true";
+      expect(areWebCallsEnabled()).toBe(true);
+    } finally {
+      envObj.WEB_CALLS_ENABLED = original;
+    }
+  });
+
+  it("enforces custom rate limits (5 per IP per hour)", async () => {
+    const { consumeRateLimit } = await import("@/server/rate-limiter");
+    const store = {
+      counts: new Map<string, number>(),
+      async incrementRateLimit(key: string) {
+        const next = (this.counts.get(key) ?? 0) + 1;
+        this.counts.set(key, next);
+        return next;
+      },
+    };
+
+    const now = new Date(1_800_000_000_000);
+    const options = { maxRequests: 5, windowMs: 3600_000 };
+
+    for (let i = 1; i <= 5; i++) {
+      const res = await consumeRateLimit(store, "web_call:ip:127.0.0.1", now, options);
+      expect(res.allowed).toBe(true);
+      expect(res.remaining).toBe(5 - i);
+    }
+
+    const blocked = await consumeRateLimit(store, "web_call:ip:127.0.0.1", now, options);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.remaining).toBe(0);
+    expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
   });
 });
 

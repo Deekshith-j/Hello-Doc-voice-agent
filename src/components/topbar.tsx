@@ -2,23 +2,19 @@
 // On small screens the primary navigation moves here as a horizontal strip.
 "use client";
 
-import { ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { signOut } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 
 import { DoctoLogo } from "./docto-logo";
 import { isActive, navigation } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
-import { Button } from "./ui/button";
 
 export function Topbar({
-  canSignOut,
   voiceConnected,
 }: {
-  canSignOut: boolean;
   voiceConnected: boolean;
 }) {
   const pathname = usePathname();
@@ -60,19 +56,6 @@ export function Topbar({
             {voiceConnected ? "Agent online" : "Agent not set up"}
           </span>
           <ThemeToggle />
-          {canSignOut ? (
-            <form action={signOut}>
-              <Button
-                aria-label="Sign out"
-                size="icon"
-                title="Sign out"
-                type="submit"
-                variant="ghost"
-              >
-                <LogOut className="size-4" />
-              </Button>
-            </form>
-          ) : null}
         </div>
       </div>
       <nav

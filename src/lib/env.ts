@@ -9,13 +9,16 @@ const envSchema = z.object({
   LLM_API_KEY: z.string().min(1).optional(),
   CLINIC_NAME: z.string().default("Docto Family Clinic"),
   CLINIC_TIMEZONE: z.string().default("America/New_York"),
-  DASHBOARD_PASSWORD: z.string().optional(),
-  SESSION_SECRET: z.string().optional(),
   PUBLIC_BASE_URL: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REFRESH_TOKEN: z.string().optional(),
   CRON_SECRET: z.string().optional(),
+  WEB_CALLS_ENABLED: z
+    .string()
+    .optional()
+    .transform((val) => val === undefined || val === "" || val === "true" || val === "1")
+    .default(true),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
@@ -30,13 +33,12 @@ export const env = envSchema.parse({
   LLM_API_KEY: process.env.LLM_API_KEY || undefined,
   CLINIC_NAME: process.env.CLINIC_NAME || undefined,
   CLINIC_TIMEZONE: process.env.CLINIC_TIMEZONE || undefined,
-  DASHBOARD_PASSWORD: process.env.DASHBOARD_PASSWORD || undefined,
-  SESSION_SECRET: process.env.SESSION_SECRET || undefined,
   PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || undefined,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || undefined,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || undefined,
   GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN || undefined,
   CRON_SECRET: process.env.CRON_SECRET || undefined,
+  WEB_CALLS_ENABLED: process.env.WEB_CALLS_ENABLED,
   NODE_ENV: process.env.NODE_ENV,
 });
 

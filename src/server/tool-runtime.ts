@@ -17,12 +17,20 @@ import { createAvailabilityService } from "@/domain/availability-service";
 import { createGoogleAccessTokenProvider } from "@/integrations/google-auth";
 import { GoogleCalendarSource } from "@/integrations/google-calendar-source";
 
-import { consumeRateLimit, type RateLimitResult } from "./rate-limiter";
+import {
+  consumeRateLimit,
+  type RateLimitOptions,
+  type RateLimitResult,
+} from "./rate-limiter";
 
 export interface ToolRuntime {
   calendarSync: CalendarSync;
   callLog: CallLogRepository;
-  consumeRateLimit: (key: string) => Promise<RateLimitResult>;
+  consumeRateLimit: (
+    key: string,
+    now?: Date,
+    options?: RateLimitOptions,
+  ) => Promise<RateLimitResult>;
   dashboard: PostgresDashboardRepository;
   ping: () => Promise<void>;
   // null means requests are accepted unsigned, which is only allowed outside production.
@@ -57,7 +65,8 @@ function createToolRuntime(): ToolRuntime {
   return {
     calendarSync,
     callLog: new PostgresCallLogRepository(sql),
-    consumeRateLimit: (key) => consumeRateLimit(repository, key),
+    consumeRateLimit: (key, now, options) =>
+      consumeRateLimit(repository, key, now, options),
     dashboard: new PostgresDashboardRepository(sql),
     retellSigningKey: getRetellConfig()?.apiKey ?? null,
     ping: () => repository.ping(),

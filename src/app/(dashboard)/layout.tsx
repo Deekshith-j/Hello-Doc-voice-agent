@@ -3,15 +3,13 @@
 import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/app-shell";
-import { requireOperator } from "@/server/dashboard-session";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  await requireOperator();
   return <AppShell>{children}</AppShell>;
 }

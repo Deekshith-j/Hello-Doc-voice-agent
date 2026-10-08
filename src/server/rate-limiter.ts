@@ -13,20 +13,28 @@ export interface RateLimitResult {
   retryAfterSeconds: number;
 }
 
+export interface RateLimitOptions {
+  maxRequests?: number;
+  windowMs?: number;
+}
+
 export async function consumeRateLimit(
   store: RateLimitStore,
   key: string,
   now = new Date(),
+  options?: RateLimitOptions,
 ): Promise<RateLimitResult> {
+  const windowMs = options?.windowMs ?? RATE_LIMIT_WINDOW_MS;
+  const maxRequests = options?.maxRequests ?? MAX_REQUESTS_PER_WINDOW;
   const windowStartMs =
-    Math.floor(now.getTime() / RATE_LIMIT_WINDOW_MS) * RATE_LIMIT_WINDOW_MS;
+    Math.floor(now.getTime() / windowMs) * windowMs;
   const count = await store.incrementRateLimit(key, new Date(windowStartMs));
   return {
-    allowed: count <= MAX_REQUESTS_PER_WINDOW,
-    remaining: Math.max(0, MAX_REQUESTS_PER_WINDOW - count),
+    allowed: count <= maxRequests,
+    remaining: Math.max(0, maxRequests - count),
     retryAfterSeconds: Math.max(
       1,
-      Math.ceil((windowStartMs + RATE_LIMIT_WINDOW_MS - now.getTime()) / 1_000),
+      Math.ceil((windowStartMs + windowMs - now.getTime()) / 1_000),
     ),
   };
 }

@@ -177,8 +177,9 @@ The preview was rebuilt using patterns from current AI-product interfaces: Geist
 - **The tradeoffs & safeguards**:
   - *Rescheduling conflict detection*: If a booking was rescheduled to a new time and the original booking request is retried with the original idempotency key, `assertSameBooking` detects the changed time payload and explicitly rejects with `idempotency_key_reused` (409) rather than overwriting or resurrecting the old time.
   - *Intervening competitor protection*: If another patient books the slot after it was cancelled, either the domain availability check or PostgreSQL's GiST exclusion constraint (`appointments_no_doctor_overlap`) triggers with `23P01`. The catch block inspects the conflicting row: because `patient_id` belongs to the competing patient, revival is rejected and the caller receives `slot_unavailable` with fresh alternative slots.
-  - *Audit trail*: Because the row is updated in place, the `updated_at` timestamp advances, while `created_at` records the original booking instant.
-
-
-
-
+### Public Demo Mode & Login Removal Decision
+- **Why removed**: For interview evaluations and public product demos, requiring passphrase authentication (`DASHBOARD_PASSWORD` and `SESSION_SECRET`) created deployment friction and credential blockers. The dashboard was made directly accessible with `/` loading the Live Call workspace immediately.
+- **Safety invariant**: All dashboard routes (`/appointments`, `/doctors`, `/calls`, `/evaluations`) are strictly read-only and expose exclusively synthetic seed data.
+- **PHI warning**: Public demo mode is suitable only for synthetic datasets. Authentication and session verification must be re-enabled prior to storing real patient records or protected health information (PHI).
+- **Public Web Call endpoint protection**: `/api/retell/web-call` is protected by dual rate limiting (max 5 per IP per hour, 30 per day overall) and an environment kill switch (`WEB_CALLS_ENABLED`, default `true`).
+- **Preserved core security**: Retell signature verification (fail closed in production), CRON_SECRET authorization for internal routes, and database Row Level Security (RLS) remain strictly active and unaltered.

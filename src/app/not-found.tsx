@@ -27,6 +27,9 @@ export default function NotFound() {
             </Link>
           </div>
         </div>
+        <footer className="mt-8 text-center text-xs text-muted-foreground">
+          Synthetic data only. Not for real patient information.
+        </footer>
       </div>
     </main>
   );

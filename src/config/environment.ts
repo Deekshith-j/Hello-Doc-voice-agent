@@ -66,22 +66,10 @@ export function isProduction(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
-export interface DashboardAuthConfig {
-  password: string;
-  sessionSecret: string;
-}
-
-export function getDashboardAuthConfig(): DashboardAuthConfig | null {
-  // Both values are required together; a password without a signing secret cannot issue sessions.
-  const password = optionalSecret.parse(process.env.DASHBOARD_PASSWORD);
-  const sessionSecret = optionalSecret.parse(process.env.SESSION_SECRET);
-  if (!password || !sessionSecret) return null;
-  return z
-    .object({
-      password: z.string().min(12, "DASHBOARD_PASSWORD needs 12+ characters."),
-      sessionSecret: z.string().min(32, "SESSION_SECRET needs 32+ characters."),
-    })
-    .parse({ password, sessionSecret });
+export function areWebCallsEnabled(): boolean {
+  const value = process.env.WEB_CALLS_ENABLED;
+  if (value === undefined || value === "" || value === "undefined") return true;
+  return value === "true" || value === "1";
 }
 
 export function getClinicSettings() {
