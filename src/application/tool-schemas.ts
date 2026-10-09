@@ -140,7 +140,25 @@ export const checkAvailabilitySchema = z
 export const bookAppointmentSchema = z
   .object({
     doctor_id: z.uuid().describe("The chosen slot's doctor_id."),
-    patient_id: patientId,
+    patient_id: patientId
+      .optional()
+      .describe("patient_id returned by find_patient or create_patient for this caller."),
+    full_name: z
+      .string()
+      .trim()
+      .min(2)
+      .max(100)
+      .optional()
+      .describe("Caller's full name if patient_id is not available."),
+    date_of_birth: z.iso
+      .date()
+      .optional()
+      .describe("Caller's date of birth as YYYY-MM-DD if patient_id is not available."),
+    phone: z
+      .string()
+      .trim()
+      .optional()
+      .describe("Caller's phone number if registering on the fly."),
     reason: z
       .string()
       .trim()
@@ -152,7 +170,15 @@ export const bookAppointmentSchema = z
     ...slotTimes,
   })
   .strict()
-  .superRefine((value, context) => validateWindow(value, context, 1));
+  .superRefine((value, context) => {
+    if (!value.patient_id && (!value.full_name || !value.date_of_birth)) {
+      context.addIssue({
+        code: "custom",
+        message: "Provide either patient_id or both full_name and date_of_birth.",
+      });
+    }
+    validateWindow(value, context, 1);
+  });
 
 export const listPatientAppointmentsSchema = z
   .object({ patient_id: patientId })

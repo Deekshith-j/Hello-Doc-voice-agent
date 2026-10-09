@@ -21,9 +21,12 @@ export const POST = createToolRoute({
   name: "book_appointment",
   schema: bookAppointmentSchema,
   execute: (service, input, { callId }) => {
+    const patientIdentifier =
+      input.patient_id ??
+      `${input.full_name?.trim().toLowerCase()}:${input.date_of_birth}`;
     const idempotencyKey = deriveIdempotencyKey(
       callId,
-      input.patient_id,
+      patientIdentifier,
       input.doctor_id,
       input.start_at,
     );

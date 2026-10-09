@@ -85,10 +85,11 @@ export class PostgresClinicRepository
     dateOfBirth: string,
   ): Promise<PatientRecord | null> {
     // Name plus DOB must identify exactly one person; an ambiguous match verifies no one.
+    const trimmed = fullName.trim();
     const rows = await this.sql<PatientRecord[]>`
       SELECT id, full_name AS "fullName"
       FROM patients
-      WHERE lower(full_name) = lower(${fullName.trim()}) AND date_of_birth = ${dateOfBirth}
+      WHERE lower(trim(full_name)) = lower(${trimmed}) AND date_of_birth = ${dateOfBirth}::date
       LIMIT 2
     `;
     return rows.length === 1 ? (rows[0] ?? null) : null;

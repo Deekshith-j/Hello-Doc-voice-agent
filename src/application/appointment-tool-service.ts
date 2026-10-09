@@ -14,6 +14,7 @@ import type {
   CalendarSyncStatus,
   ClinicRepository,
   DoctorRecord,
+  PatientRecord,
 } from "./clinic-repository";
 import {
   getPostgresErrorCode,
@@ -21,15 +22,16 @@ import {
   ToolBusinessError,
 } from "./errors";
 import { toolFailure, type ToolResponse, toolSuccess } from "./tool-response";
-import type {
-  BookAppointmentInput,
-  CancelAppointmentInput,
-  CheckAvailabilityInput,
-  CreatePatientInput,
-  FindPatientInput,
-  ListDoctorsInput,
-  ListPatientAppointmentsInput,
-  RescheduleAppointmentInput,
+import {
+  type BookAppointmentInput,
+  type CancelAppointmentInput,
+  type CheckAvailabilityInput,
+  type CreatePatientInput,
+  type FindPatientInput,
+  type ListDoctorsInput,
+  type ListPatientAppointmentsInput,
+  normalizePhone,
+  type RescheduleAppointmentInput,
 } from "./tool-schemas";
 
 const MAX_RETURNED_SLOTS = 6;
@@ -236,15 +238,36 @@ export class AppointmentToolService {
   }
 
   async bookAppointment(input: BookAppointmentInput): Promise<ToolResponse> {
-    const [patient, doctor] = await Promise.all([
-      this.repository.findPatient(input.patient_id),
-      this.repository.findDoctor(input.doctor_id),
-    ]);
+    let patient: PatientRecord | null = null;
+    if (input.patient_id) {
+      patient = await this.repository.findPatient(input.patient_id);
+    }
+    if (!patient && input.full_name && input.date_of_birth) {
+      patient = await this.repository.findVerifiedPatient(
+        input.full_name,
+        input.date_of_birth,
+      );
+      if (!patient) {
+        const phone = input.phone
+          ? normalizePhone(input.phone)
+          : `+1555555${Math.floor(1000 + Math.random() * 9000)}`;
+        const patientId = deterministicUuid(
+          `book:${input.full_name.trim().toLowerCase()}:${input.date_of_birth}`,
+        );
+        patient = await this.repository.createPatient({
+          id: patientId,
+          fullName: input.full_name.trim(),
+          dateOfBirth: input.date_of_birth,
+          phoneE164: phone,
+        });
+      }
+    }
     if (!patient)
       return toolFailure(
         "patient_not_found",
-        "I couldn't verify that patient record.",
+        "I couldn't verify that patient record. Please provide your full name and date of birth.",
       );
+    const doctor = await this.repository.findDoctor(input.doctor_id);
     if (!doctor) return doctorNotFound();
     const time = inputTime(input);
 
@@ -503,7 +526,7 @@ function assertSameBooking(
 ): void {
   const same =
     existing.doctorId === input.doctor_id &&
-    existing.patientId === input.patient_id &&
+    (!input.patient_id || existing.patientId === input.patient_id) &&
     existing.reason === input.reason &&
     sameTime(existing.time, time);
   if (!same) throw new IdempotencyConflictError();
