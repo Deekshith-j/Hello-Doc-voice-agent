@@ -131,6 +131,11 @@ export async function POST(request: Request): Promise<Response> {
       {
         clinic_name: clinicSettings.name,
         emergency_number: "911",
+        current_time: new Intl.DateTimeFormat("en-US", {
+          timeZone: clinicSettings.timeZone,
+          dateStyle: "full",
+          timeStyle: "short",
+        }).format(new Date()),
         clinic_timezone: clinicSettings.timeZone,
         clinic_time_zone: clinicSettings.timeZone,
       },
