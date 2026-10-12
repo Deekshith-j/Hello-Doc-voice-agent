@@ -12,7 +12,7 @@ export interface DrizzleConnection {
 
 export function createSqlClient(databaseUrl: string): Sql {
   // One connection per serverless instance; prepare: false is required because
-  // the Supabase transaction pooler (port 6543 / PgBouncer) does not support prepared statements.
+  // the Supabase transaction pooler (port 6543) does not support prepared statements.
   return postgres(databaseUrl, {
     max: 1,
     prepare: false,

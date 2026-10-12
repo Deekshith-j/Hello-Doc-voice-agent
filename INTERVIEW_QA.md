@@ -69,7 +69,7 @@ If Next.js middleware or body parsers mutate or format whitespace in the raw JSO
 
 ### 8. Database Networking: Why do we need both a Pooler URL (`DATABASE_URL`) and a Direct URL (`DIRECT_URL`)?
 **Short Answer**:
-Serverless Next.js functions scale horizontally to hundreds of ephemeral instances. Connecting directly to Postgres would exhaust PostgreSQL's max connection limits (`max_connections=100`). The Transaction Pooler (PgBouncer, port 6543) multiplexes short queries over a small pool of shared database connections. However, PgBouncer in transaction mode does not support session-level features like `LISTEN/NOTIFY`, advisory locks, or schema migrations; hence, DDL migrations and seed scripts require `DIRECT_URL` (port 5432).
+Serverless Next.js functions scale horizontally to hundreds of ephemeral instances. Connecting directly to Postgres would exhaust PostgreSQL's max connection limits (`max_connections=100`). The Supabase transaction pooler (port 6543) multiplexes short queries over a small pool of shared database connections. However, the Supabase transaction pooler in transaction mode does not support session-level features like `LISTEN/NOTIFY`, advisory locks, or schema migrations; hence, DDL migrations and seed scripts require `DIRECT_URL` (port 5432).
 
 **How it can fail**:
 If application code runs schema migrations or uses prepared statements with session pin requirements over the transaction pooler, queries will fail with `prepared statement does not exist` or protocol synchronization errors.
@@ -78,7 +78,10 @@ If application code runs schema migrations or uses prepared statements with sess
 
 ### 9. Row Level Security (RLS): Why does the codebase enforce authorization in application SQL queries rather than PostgreSQL RLS policies?
 **Short Answer**:
-In voice telephony, incoming requests authenticate server-to-server via Retell HMAC signatures rather than user-session JWTs. Enforcing PostgreSQL Row Level Security (RLS) would require executing `SET LOCAL app.current_patient_id = ...` on every transaction. Because serverless Next.js functions connect through PgBouncer in transaction pooling mode (`DATABASE_URL`), session-level state and configuration variables can bleed between pooled connections or reset unpredictably. Instead, repository queries explicitly parameterize and enforce patient ownership in SQL (`WHERE id = ${id} AND patient_id = ${patientId}`), while `handleRouteError` redacts driver error messages to prevent PHI leakage.
+RLS is enabled with no policies to block Supabase's public API roles; the server connects as the database owner role, which bypasses RLS; access control is enforced in application code (patient ownership checks).
+
+**Detailed Rationale**:
+In voice telephony, incoming requests authenticate server-to-server via Retell HMAC signatures rather than user-session JWTs. Enforcing PostgreSQL Row Level Security (RLS) would require executing `SET LOCAL app.current_patient_id = ...` on every transaction. Because serverless Next.js functions connect through the Supabase transaction pooler in transaction pooling mode (`DATABASE_URL`), session-level state and configuration variables can bleed between pooled connections or reset unpredictably. Instead, repository queries explicitly parameterize and enforce patient ownership in SQL (`WHERE id = ${id} AND patient_id = ${patientId}`), while `handleRouteError` redacts driver error messages to prevent PHI leakage.
 
 **How it can fail**:
 If an engineer adds a new repository method that queries appointments by ID alone (`WHERE id = ${id}`) without joining or checking `patient_id`, an attacker guessing a UUID could inspect or cancel another patient's appointment. Defense-in-depth requires strict query review and schema-level tenant isolation in multi-tenant deployments.
@@ -110,8 +113,10 @@ If an evaluation test relies solely on the LLM judge, an agent that hallucinates
 **Short Answer**:
 All inbound tool calls from Retell originate from Retell's centralized telephony proxy infrastructure (shared NAT/egress IP addresses). Rate limiting by client IP (`x-forwarded-for`) would throttle *all* callers across the entire clinic whenever total volume increases. Instead, `src/server/tool-route.ts` extracts `call_id` from the Retell envelope and rate limits per `${tool.name}:call:${callId}`.
 
+For public browser demo calls on `/api/retell/web-call`, we enforce two in-memory sliding window limits: 5 per IP per hour and 30 per day overall, both per serverless instance (not concurrency).
+
 **How it can fail**:
-If an attacker invokes tool endpoints directly without a `call_id` (attempting an external denial-of-service attack), the system falls back to IP limiting. However, if the HMAC signature check were disabled or bypassed, an attacker could spoof random `call_id` values to bypass rate limits entirely.
+If an attacker invokes tool endpoints directly without a `call_id` (attempting an external denial-of-service attack), the system falls back to IP limiting. However, if the HMAC signature check were disabled or bypassed, an attacker could spoof random `call_id` values to bypass rate limits entirely. Additionally, because the web-call demo limits are evaluated in-memory per serverless instance (5 per IP per hour and 30 per day overall), traffic distributed across multiple serverless instances will evaluate separate memory buckets rather than a centralized Redis state.
 
 ---
 
