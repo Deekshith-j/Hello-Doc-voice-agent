@@ -40,4 +40,4 @@ npm run build          # Production Next.js build (tests pass)
 1. **Supabase Database URL**: Add your pooled Supabase Postgres URL to `DATABASE_URL` in `.env.local` / Vercel. Run `npm run db:migrate` and `npm run db:seed`.
 2. **Retell AI**: Add `RETELL_API_KEY` and run `npm run retell:setup` to deploy the agent. Set `RETELL_AGENT_ID`.
 3. **Google Calendar (Optional)**: Provide OAuth credentials in `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`.
-4. **Vercel Deploy**: Deploy repository and set `DASHBOARD_PASSWORD`, `SESSION_SECRET`, and `CRON_SECRET`.
+4. **Vercel Deploy**: Deploy repository and set `CRON_SECRET` and `PUBLIC_BASE_URL`.

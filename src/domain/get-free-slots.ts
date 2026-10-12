@@ -1,5 +1,6 @@
-// Expands recurring clinic hours into UTC slots and subtracts every busy interval.
-// The function is pure: callers supply database/calendar snapshots and an explicit clock.
+// WHAT: Expands recurring clinic operating hours into UTC slots and subtracts busy/time-off intervals.
+// WHY: Booking logic requires pure, deterministic slot generation anchored in the doctor's wall-clock timezone.
+// Translating local rules to absolute UTC avoids DST discrepancies (23h or 25h days) and guarantees timezone correctness.
 import { TZDate } from "@date-fns/tz";
 
 import type { TimeInterval } from "./availability";
@@ -116,6 +117,11 @@ function buildSlots(
   return slots;
 }
 
+// WHY LOCAL DATE ENUMERATION:
+// Clinic operating rules (e.g. "Mondays 9am-5pm") exist exclusively in the doctor's wall-clock timezone.
+// Iterating by 24-hour UTC intervals would cross local midnight boundaries unevenly and fail during DST transitions
+// (where local days have 23 or 25 hours). We enumerate discrete calendar dates (year, month, day) in the doctor's
+// timezone first, then map each rule to absolute UTC instants.
 function listLocalDates(from: Date, to: Date, timeZone: string): LocalDate[] {
   const first = localDateParts(from, timeZone);
   const last = localDateParts(new Date(to.getTime() - 1), timeZone);
@@ -143,6 +149,12 @@ function localDateParts(instant: Date, timeZone: string): LocalDate {
   };
 }
 
+// WHY DST VALIDATION:
+// During "spring forward" DST transitions, a wall-clock hour ceases to exist (e.g., 2:00 AM -> 3:00 AM).
+// Standard JS Date constructors or naive math will silently coerce invalid wall times into the adjacent hour,
+// offering phantom slots to callers. Checking that `zoned.getHours() === hour` and `zoned.getMinutes() === minute`
+// guarantees that nonexistent wall-clock times return null and are safely dropped.
+// During "fall back", the ambiguous hour is resolved deterministically by TZDate to the standard offset.
 function localInstant(
   date: LocalDate,
   time: string,
@@ -170,8 +182,11 @@ function isFree(slot: TimeInterval, blocked: readonly TimeInterval[]): boolean {
   return blocked.every((interval) => !overlaps(slot, interval));
 }
 
+// WHY HALF-OPEN INTERVAL OVERLAPS:
+// Clinical bookings are half-open intervals [start, end). An appointment ending at 10:30 AM
+// leaves the doctor immediately free to start the next appointment at 10:30 AM.
+// Standard overlap logic `left.start < right.end && right.start < left.end` treats abutting intervals as non-overlapping.
 function overlaps(left: TimeInterval, right: TimeInterval): boolean {
-  // Half-open intervals allow a new appointment to start exactly when another one ends.
   return left.start < right.end && right.start < left.end;
 }
 

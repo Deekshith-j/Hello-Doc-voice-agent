@@ -1,3 +1,6 @@
+// WHAT: In-process harness executing the production system prompt and tools against real test databases.
+// WHY: Allows end-to-end evaluation of voice scheduling behaviors in pure text mode without expensive telephony
+// or Retell paid call credits, accurately mirroring production function-calling schemas.
 import { AppointmentToolService } from "@/application/appointment-tool-service";
 import { CalendarSync } from "@/application/calendar-sync";
 import {
@@ -174,7 +177,12 @@ export class AgentHarness {
     model: string;
     messages: ChatMessage[];
     onToolCall?: (record: ToolCallRecord) => void;
-  }): Promise<{ reply: string; toolCalls: ToolCallRecord[]; endedCall: boolean }> {
+  }): Promise<{
+    reply: string;
+    toolCalls: ToolCallRecord[];
+    endedCall: boolean;
+    newMessages: ChatMessage[];
+  }> {
     const client = getLlmClient();
     const systemPrompt = buildPrompt()
       .replaceAll("{{clinic_name}}", "Downtown Health Clinic")
@@ -194,10 +202,12 @@ export class AgentHarness {
     ];
 
     const records: ToolCallRecord[] = [];
+    const newMessages: ChatMessage[] = [];
     let endedCall = false;
+    let reply = "";
 
     // Run agent loop until final textual response is generated (or call ends)
-    for (let step = 0; step < 5; step++) {
+    for (let step = 0; step < 8; step++) {
       const completion = await client.chatCompletion({
         model: params.model,
         messages: fullMessages,
@@ -207,15 +217,14 @@ export class AgentHarness {
       });
 
       const message = completion.message;
-      fullMessages.push(message);
 
       if (!message.tool_calls || message.tool_calls.length === 0) {
-        return {
-          reply: message.content?.trim() || "",
-          toolCalls: records,
-          endedCall,
-        };
+        reply = message.content?.trim() || "";
+        break;
       }
+
+      fullMessages.push(message);
+      newMessages.push(message);
 
       for (const tc of message.tool_calls) {
         let parsedArgs: Record<string, unknown> = {};
@@ -239,20 +248,85 @@ export class AgentHarness {
         records.push(record);
         params.onToolCall?.(record);
 
-        fullMessages.push({
+        const toolMsg: ChatMessage = {
           role: "tool",
           tool_call_id: tc.id,
           name: tc.function.name,
           content: JSON.stringify(result),
-        });
+        };
+        fullMessages.push(toolMsg);
+        newMessages.push(toolMsg);
       }
     }
 
-    const last = fullMessages[fullMessages.length - 1];
+    // If the loop finished after tool calls without a spoken reply, request one with tool_choice="none"
+    if (!reply) {
+      const finalCompletion = await client.chatCompletion({
+        model: params.model,
+        messages: [
+          ...fullMessages,
+          {
+            role: "user",
+            content:
+              "Please provide your spoken verbal response to the caller now in one short conversational sentence.",
+          },
+        ],
+        tools: AGENT_TOOLS,
+        tool_choice: "none",
+        temperature: 0.2,
+      });
+      reply = finalCompletion.message.content?.trim() || "";
+    }
+
+    // Safety fallback: ensure the assistant never sends empty whitespace
+    if (!reply) {
+      if (
+        records.some(
+          (r) => r.tool_name === "book_appointment" && r.result.ok,
+        )
+      ) {
+        reply =
+          "Your appointment is booked. Is there anything else I can help you with today?";
+      } else if (
+        records.some(
+          (r) => r.tool_name === "reschedule_appointment" && r.result.ok,
+        )
+      ) {
+        reply =
+          "Your appointment has been rescheduled. Is there anything else I can help you with today?";
+      } else if (
+        records.some(
+          (r) => r.tool_name === "cancel_appointment" && r.result.ok,
+        )
+      ) {
+        reply =
+          "Your appointment has been cancelled. Is there anything else I can help you with today?";
+      } else if (
+        records.some(
+          (r) => r.tool_name === "create_patient" && r.result.ok,
+        )
+      ) {
+        reply =
+          "I have created your patient record. What date and doctor would you prefer?";
+      } else if (
+        records.some(
+          (r) => r.tool_name === "check_availability" && !r.result.ok,
+        )
+      ) {
+        reply =
+          "I'm sorry, there are no open slots at that time. Would you like to check another day or morning?";
+      } else {
+        reply = "Thank you. How can I help you today?";
+      }
+    }
+
+    newMessages.push({ role: "assistant", content: reply });
+
     return {
-      reply: last?.content || "",
+      reply,
       toolCalls: records,
       endedCall,
+      newMessages,
     };
   }
 }

@@ -1,0 +1,395 @@
+{
+  "timestamp": "2026-10-12T17:42:47.691Z",
+  "suite_mode": "smoke",
+  "models": {
+    "agent_model": "gemini-flash-latest",
+    "patient_model": "gemini-3.5-flash-lite",
+    "judge_model": "gemini-3.5-flash",
+    "retell_deployed_model": "gpt-6-luna"
+  },
+  "budget": {
+    "cap_usd": 2,
+    "spent_usd": 0.0044
+  },
+  "summary": {
+    "total_runs": 5,
+    "passed_runs": 0,
+    "overall_pass_rate": 0,
+    "median_latency_per_turn_ms": 1666,
+    "total_tokens": 56047,
+    "total_cost_usd": 0.0044
+  },
+  "category_pass_rates": {
+    "book_existing_patient": {
+      "total": 2,
+      "passed": 0,
+      "pass_rate": 0
+    },
+    "register_new_patient_then_book": {
+      "total": 2,
+      "passed": 0,
+      "pass_rate": 0
+    },
+    "reschedule": {
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0
+    }
+  },
+  "failure_causes": {
+    "DB State: Expected booked appointment in database, but none was found for caller.": 4,
+    "Judge Rubric: Judge execution error: Unexpected token '`', \"```json\" is not valid JSON": 1,
+    "Judge Rubric: Judge execution error: Unexpected token 'M', \"Marcus\" is not valid JSON": 1,
+    "Judge Rubric: Judge execution error: Expected double-quoted property name in JSON at position 16 (line 1 column 17)": 1,
+    "Judge Rubric: Judge execution error: Unexpected token '`', \"```json\n{\" is not valid JSON": 2
+  },
+  "runs": [
+    {
+      "scenario_id": "book-exist-01",
+      "category": "book_existing_patient",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "Hello there. I believe I am a new patient with your clinic."
+        },
+        {
+          "role": "agent",
+          "content": "Could you please give me your full name and spell it for me?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My name is Eleanor Vance. That's E-L-E-A-N-O-R V-A-N-C-E."
+        },
+        {
+          "role": "agent",
+          "content": "Thank you, Eleanor, and what is your date of birth?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My date of birth is April twelfth, nineteen fifty-two."
+        },
+        {
+          "role": "agent",
+          "content": "And could you please provide your phone number?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My phone number is 555-234-5678."
+        },
+        {
+          "role": "agent",
+          "content": "I have your name as Eleanor Vance, date of birth April 12th, 1952, and phone number 555-234-5678, is that correct?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "Yes, dear, that is all correct. I would like to schedule an appointment with Dr. Sarah Chen for next Tuesday morning, please."
+        },
+        {
+          "role": "agent",
+          "content": "I'm sorry, but I'm unable to create your record over the phone, so please contact our front desk for assistance.",
+          "tool_calls": [
+            {
+              "tool_name": "create_patient",
+              "arguments": {
+                "date_of_birth": "1952-04-12",
+                "full_name": "Eleanor Vance",
+                "phone": "555-234-5678"
+              },
+              "result": {
+                "ok": false,
+                "code": "cannot_create_patient",
+                "message": "I can't create that record by phone, please call the front desk."
+              },
+              "timestamp": 1791826855300
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791826855303
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "Oh, I understand. Thank you very much for your help today. Goodbye."
+        },
+        {
+          "role": "agent",
+          "content": "Thank you for calling, and goodbye!",
+          "tool_calls": [
+            {
+              "tool_name": "end_call",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "call_ended",
+                "message": "Call ended."
+              },
+              "timestamp": 1791826871840
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "create_patient",
+          "arguments": {
+            "date_of_birth": "1952-04-12",
+            "full_name": "Eleanor Vance",
+            "phone": "555-234-5678"
+          },
+          "result": {
+            "ok": false,
+            "code": "cannot_create_patient",
+            "message": "I can't create that record by phone, please call the front desk."
+          },
+          "timestamp": 1791826855300
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791826855303
+        },
+        {
+          "tool_name": "end_call",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "call_ended",
+            "message": "Call ended."
+          },
+          "timestamp": 1791826871840
+        }
+      ],
+      "grades": {
+        "db_state": {
+          "passed": false,
+          "reason": "Expected booked appointment in database, but none was found for caller."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "Judge execution error: Unexpected token '`', \"```json\" is not valid JSON"
+        }
+      },
+      "turns_count": 13,
+      "duration_ms": 101027,
+      "tokens": {
+        "prompt_tokens": 46880,
+        "completion_tokens": 314,
+        "total_tokens": 47194
+      },
+      "cost_usd": 0.0035891499999999993
+    },
+    {
+      "scenario_id": "book-exist-02",
+      "category": "book_existing_patient",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "Hi, I've been here before. I'm trying to book the earliest general consultation slot available next Wednesday."
+        },
+        {
+          "role": "agent",
+          "content": "Could you please state and spell your full name for me?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "Sure, it's Marcus Brody. M-A-R-C-U-S B-R-O-D-Y."
+        }
+      ],
+      "tool_calls": [],
+      "grades": {
+        "db_state": {
+          "passed": false,
+          "reason": "Expected booked appointment in database, but none was found for caller."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "Judge execution error: Unexpected token 'M', \"Marcus\" is not valid JSON"
+        }
+      },
+      "turns_count": 4,
+      "duration_ms": 54769,
+      "tokens": {
+        "prompt_tokens": 53295,
+        "completion_tokens": 380,
+        "total_tokens": 53675
+      },
+      "cost_usd": 0.004106449999999999,
+      "error": "LLM API daily quota exhausted for gemini-flash-latest (retry in 6.3h): [{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash\\nPlease retry in 6h17m30.40718822s.\",\n    \"status\": \"RESOURCE_EXHAUSTED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.Help\",\n        \"links\": [\n          {\n            \"description\": \"Learn more about Gemini API quotas\",\n            \"url\": \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.QuotaFailure\",\n        \"violations\": [\n          {\n            \"quotaMetric\": \"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\n            \"quotaId\": \"GenerateRequestsPerDayPerProjectPerModel-FreeTier\",\n            \"quotaDimensions\": {\n              \"location\": \"global\",\n              \"model\": \"gemini-3.8-flash\"\n            },\n            \"quotaValue\": \"20\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.RetryInfo\",\n        \"retryDelay\": \"22650s\"\n      }\n    ]\n  }\n}\n]"
+    },
+    {
+      "scenario_id": "reg-new-01",
+      "category": "register_new_patient_then_book",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "Hi there! I'm a new patient, I just recently moved to town."
+        }
+      ],
+      "tool_calls": [],
+      "grades": {
+        "db_state": {
+          "passed": false,
+          "reason": "Expected booked appointment in database, but none was found for caller."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "Judge execution error: Expected double-quoted property name in JSON at position 16 (line 1 column 17)"
+        }
+      },
+      "turns_count": 2,
+      "duration_ms": 1129,
+      "tokens": {
+        "prompt_tokens": 54073,
+        "completion_tokens": 402,
+        "total_tokens": 54475
+      },
+      "cost_usd": 0.004198049999999999,
+      "error": "LLM API daily quota exhausted for gemini-flash-latest (retry in 6.3h): [{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash\\nPlease retry in 6h17m26.16430444s.\",\n    \"status\": \"RESOURCE_EXHAUSTED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.Help\",\n        \"links\": [\n          {\n            \"description\": \"Learn more about Gemini API quotas\",\n            \"url\": \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.QuotaFailure\",\n        \"violations\": [\n          {\n            \"quotaMetric\": \"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\n            \"quotaId\": \"GenerateRequestsPerDayPerProjectPerModel-FreeTier\",\n            \"quotaDimensions\": {\n              \"model\": \"gemini-3.8-flash\",\n              \"location\": \"global\"\n            },\n            \"quotaValue\": \"20\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.RetryInfo\",\n        \"retryDelay\": \"22646s\"\n      }\n    ]\n  }\n}\n]"
+    },
+    {
+      "scenario_id": "reg-new-02",
+      "category": "register_new_patient_then_book",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "Hi, I'm a new patient and I'd like to schedule an annual checkup, please."
+        }
+      ],
+      "tool_calls": [],
+      "grades": {
+        "db_state": {
+          "passed": false,
+          "reason": "Expected booked appointment in database, but none was found for caller."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "Judge execution error: Unexpected token '`', \"```json\n{\" is not valid JSON"
+        }
+      },
+      "turns_count": 2,
+      "duration_ms": 1187,
+      "tokens": {
+        "prompt_tokens": 54837,
+        "completion_tokens": 430,
+        "total_tokens": 55267
+      },
+      "cost_usd": 0.004290249999999999,
+      "error": "LLM API daily quota exhausted for gemini-flash-latest (retry in 6.3h): [{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash\\nPlease retry in 6h17m22.483881946s.\",\n    \"status\": \"RESOURCE_EXHAUSTED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.Help\",\n        \"links\": [\n          {\n            \"description\": \"Learn more about Gemini API quotas\",\n            \"url\": \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.QuotaFailure\",\n        \"violations\": [\n          {\n            \"quotaMetric\": \"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\n            \"quotaId\": \"GenerateRequestsPerDayPerProjectPerModel-FreeTier\",\n            \"quotaDimensions\": {\n              \"location\": \"global\",\n              \"model\": \"gemini-3.8-flash\"\n            },\n            \"quotaValue\": \"20\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.RetryInfo\",\n        \"retryDelay\": \"22642s\"\n      }\n    ]\n  }\n}\n]"
+    },
+    {
+      "scenario_id": "resched-01",
+      "category": "reschedule",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "Hi, I'm an existing patient. My work schedule shifted and I need to move my appointment."
+        }
+      ],
+      "tool_calls": [],
+      "grades": {
+        "db_state": {
+          "passed": true,
+          "reason": "DB state invariants satisfied: no overlaps, no duplicates, expectations met."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "Judge execution error: Unexpected token '`', \"```json\n{\" is not valid JSON"
+        }
+      },
+      "turns_count": 2,
+      "duration_ms": 1360,
+      "tokens": {
+        "prompt_tokens": 55592,
+        "completion_tokens": 455,
+        "total_tokens": 56047
+      },
+      "cost_usd": 0.0043792,
+      "error": "LLM API daily quota exhausted for gemini-flash-latest (retry in 6.3h): [{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash\\nPlease retry in 6h17m19.279197698s.\",\n    \"status\": \"RESOURCE_EXHAUSTED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.Help\",\n        \"links\": [\n          {\n            \"description\": \"Learn more about Gemini API quotas\",\n            \"url\": \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.QuotaFailure\",\n        \"violations\": [\n          {\n            \"quotaMetric\": \"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\n            \"quotaId\": \"GenerateRequestsPerDayPerProjectPerModel-FreeTier\",\n            \"quotaDimensions\": {\n              \"location\": \"global\",\n              \"model\": \"gemini-3.8-flash\"\n            },\n            \"quotaValue\": \"20\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.RetryInfo\",\n        \"retryDelay\": \"22639s\"\n      }\n    ]\n  }\n}\n]"
+    }
+  ]
+}

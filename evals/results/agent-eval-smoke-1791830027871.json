@@ -1,0 +1,3097 @@
+{
+  "timestamp": "2026-10-12T18:33:47.870Z",
+  "suite_mode": "smoke",
+  "models": {
+    "agent_model": "gemini-flash-lite-latest",
+    "patient_model": "gemini-3.5-flash-lite",
+    "judge_model": "gemini-3.1-flash-lite",
+    "retell_deployed_model": "gpt-6-luna"
+  },
+  "budget": {
+    "cap_usd": 2,
+    "spent_usd": 0.0224
+  },
+  "summary": {
+    "total_runs": 5,
+    "passed_runs": 0,
+    "overall_pass_rate": 0,
+    "median_latency_per_turn_ms": 1138,
+    "total_tokens": 436558,
+    "total_cost_usd": 0.0224
+  },
+  "category_pass_rates": {
+    "book_existing_patient": {
+      "total": 2,
+      "passed": 0,
+      "pass_rate": 0
+    },
+    "register_new_patient_then_book": {
+      "total": 2,
+      "passed": 0,
+      "pass_rate": 0
+    },
+    "reschedule": {
+      "total": 1,
+      "passed": 0,
+      "pass_rate": 0
+    }
+  },
+  "failure_causes": {
+    "Judge Rubric: The agent failed the confirmation requirement by failing to explicitly confirm the appointment details with the patient before executing the booking.": 1,
+    "Judge Rubric: The agent failed to confirm the appointment before executing the booking and leaked raw JSON data into the conversation.": 1,
+    "DB State: Expected booked appointment in database, but none was found for caller.": 2,
+    "Judge Rubric: The agent failed to offer the requested appointment time for 'next Thursday' and instead offered slots for a different day.": 1,
+    "Judge Rubric: The agent failed to offer slots for the requested time frame (next Friday) and instead offered slots for today, violating the conversational goal.": 1,
+    "Judge Rubric: The agent failed the conversational style rubric by offering four slots instead of the maximum of three and by reading raw JSON data directly to the patient.": 1
+  },
+  "runs": [
+    {
+      "scenario_id": "book-exist-01",
+      "category": "book_existing_patient",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "Hello. I am an existing patient, and I've been here before."
+        },
+        {
+          "role": "agent",
+          "content": "Could you please spell out your full name and let me know your date of birth?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My name is Eleanor Vance, spelled E-L-E-A-N-O-R V-A-N-C-E, and my date of birth is April 12th, 1952."
+        },
+        {
+          "role": "agent",
+          "content": "What is the reason for your visit today, and do you have a preferred doctor or specialty?",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Eleanor Vance",
+                "date_of_birth": "1952-04-12"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3",
+                  "patient_name": "Eleanor Vance"
+                }
+              },
+              "timestamp": 1791829550682
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I would like to schedule an appointment with Dr. Sarah Chen, please."
+        },
+        {
+          "role": "agent",
+          "content": "I have openings with Dr. Sarah Chen on Monday, October 12th at 9:00 AM, 9:30 AM, or 10:00 AM. Would you like one of those times?",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Eleanor Vance",
+                "date_of_birth": "1952-04-12"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3",
+                  "patient_name": "Eleanor Vance"
+                }
+              },
+              "timestamp": 1791829556369
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {
+                "specialty": "Cardiology"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791829558316
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829559675
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "doctor_id": "10000000-0000-4000-8000-000000000002",
+                "start_at": "2026-10-12T08:00:00-04:00",
+                "end_at": "2026-10-19T17:00:00-04:00"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Monday, October 12 at 9:00 AM with Dr. Sarah Chen, or Monday, October 12 at 9:30 AM with Dr. Sarah Chen, or Monday, October 12 at 10:00 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:00:00.000Z",
+                      "end_at": "2026-10-12T13:30:00.000Z",
+                      "when": "Monday, October 12 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:30:00.000Z",
+                      "end_at": "2026-10-12T14:00:00.000Z",
+                      "when": "Monday, October 12 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T14:00:00.000Z",
+                      "end_at": "2026-10-12T14:30:00.000Z",
+                      "when": "Monday, October 12 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T14:30:00.000Z",
+                      "end_at": "2026-10-12T15:00:00.000Z",
+                      "when": "Monday, October 12 at 10:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T15:00:00.000Z",
+                      "end_at": "2026-10-12T15:30:00.000Z",
+                      "when": "Monday, October 12 at 11:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T15:30:00.000Z",
+                      "end_at": "2026-10-12T16:00:00.000Z",
+                      "when": "Monday, October 12 at 11:30 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829560861
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "Good morning. I was hoping for next Tuesday morning, if Dr. Chen has any openings then?"
+        },
+        {
+          "role": "agent",
+          "content": "I have openings with Dr. Sarah Chen next Tuesday, October 20th at 9:00 AM, 9:30 AM, or 10:00 AM. Would you like one of those times?",
+          "tool_calls": [
+            {
+              "tool_name": "list_doctors",
+              "arguments": {
+                "specialty": ""
+              },
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829566481
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "start_at": "2026-10-20T08:00:00-04:00",
+                "doctor_id": "10000000-0000-4000-8000-000000000002",
+                "end_at": "2026-10-20T12:00:00-04:00"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Tuesday, October 20 at 9:00 AM with Dr. Sarah Chen, or Tuesday, October 20 at 9:30 AM with Dr. Sarah Chen, or Tuesday, October 20 at 10:00 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T13:00:00.000Z",
+                      "end_at": "2026-10-20T13:30:00.000Z",
+                      "when": "Tuesday, October 20 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T13:30:00.000Z",
+                      "end_at": "2026-10-20T14:00:00.000Z",
+                      "when": "Tuesday, October 20 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T14:00:00.000Z",
+                      "end_at": "2026-10-20T14:30:00.000Z",
+                      "when": "Tuesday, October 20 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T14:30:00.000Z",
+                      "end_at": "2026-10-20T15:00:00.000Z",
+                      "when": "Tuesday, October 20 at 10:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T15:00:00.000Z",
+                      "end_at": "2026-10-20T15:30:00.000Z",
+                      "when": "Tuesday, October 20 at 11:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T15:30:00.000Z",
+                      "end_at": "2026-10-20T16:00:00.000Z",
+                      "when": "Tuesday, October 20 at 11:30 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829568489
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I would love the 9:00 AM slot on Tuesday, please."
+        },
+        {
+          "role": "agent",
+          "content": "{\"ok\":true,\"code\":\"appointment_booked\",\"message\":\"The appointment is booked.\",\"data\":{\"appointment_id\":\"377c893f-16d3-4087-aef4-976da3975d87\",\"doctor_id\":\"10000000-0000-4000-8000-000000000002\",\"doctor_name\":\"Dr. Sarah Chen\",\"when\":\"Tuesday, October 20 at 9:00 AM\",\"start_at\":\"2026-10-20T13:00:00.000Z\",\"end_at\":\"2026-10-20T13:30:00.000Z\",\"status\":\"booked\",\"calendar_sync_status\":\"not_configured\"}}",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "date_of_birth": "1952-04-12",
+                "full_name": "Eleanor Vance"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3",
+                  "patient_name": "Eleanor Vance"
+                }
+              },
+              "timestamp": 1791829624028
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "start_at": "2026-10-20T09:00:00-04:00",
+                "end_at": "2026-10-20T17:00:00-04:00",
+                "specialty": "Cardiology"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791829625336
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829626598
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "end_at": "2026-10-20T17:00:00-04:00",
+                "doctor_id": "10000000-0000-4000-8000-000000000002",
+                "start_at": "2026-10-20T09:00:00-04:00"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Tuesday, October 20 at 9:00 AM with Dr. Sarah Chen, or Tuesday, October 20 at 9:30 AM with Dr. Sarah Chen, or Tuesday, October 20 at 10:00 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T13:00:00.000Z",
+                      "end_at": "2026-10-20T13:30:00.000Z",
+                      "when": "Tuesday, October 20 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T13:30:00.000Z",
+                      "end_at": "2026-10-20T14:00:00.000Z",
+                      "when": "Tuesday, October 20 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T14:00:00.000Z",
+                      "end_at": "2026-10-20T14:30:00.000Z",
+                      "when": "Tuesday, October 20 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T14:30:00.000Z",
+                      "end_at": "2026-10-20T15:00:00.000Z",
+                      "when": "Tuesday, October 20 at 10:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T15:00:00.000Z",
+                      "end_at": "2026-10-20T15:30:00.000Z",
+                      "when": "Tuesday, October 20 at 11:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-20T15:30:00.000Z",
+                      "end_at": "2026-10-20T16:00:00.000Z",
+                      "when": "Tuesday, October 20 at 11:30 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829627802
+            },
+            {
+              "tool_name": "book_appointment",
+              "arguments": {
+                "reason": "Routine checkup",
+                "doctor_id": "10000000-0000-4000-8000-000000000002",
+                "end_at": "2026-10-20T13:30:00.000Z",
+                "start_at": "2026-10-20T13:00:00.000Z",
+                "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3"
+              },
+              "result": {
+                "ok": true,
+                "code": "appointment_booked",
+                "message": "The appointment is booked.",
+                "data": {
+                  "appointment_id": "377c893f-16d3-4087-aef4-976da3975d87",
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "when": "Tuesday, October 20 at 9:00 AM",
+                  "start_at": "2026-10-20T13:00:00.000Z",
+                  "end_at": "2026-10-20T13:30:00.000Z",
+                  "status": "booked",
+                  "calendar_sync_status": "not_configured"
+                }
+              },
+              "timestamp": 1791829629049
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "Thank you so much for your help. Have a wonderful day, goodbye."
+        },
+        {
+          "role": "agent",
+          "content": "You're very welcome, goodbye!",
+          "tool_calls": [
+            {
+              "tool_name": "end_call",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "call_ended",
+                "message": "Call ended."
+              },
+              "timestamp": 1791829632966
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Eleanor Vance",
+            "date_of_birth": "1952-04-12"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3",
+              "patient_name": "Eleanor Vance"
+            }
+          },
+          "timestamp": 1791829550682
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Eleanor Vance",
+            "date_of_birth": "1952-04-12"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3",
+              "patient_name": "Eleanor Vance"
+            }
+          },
+          "timestamp": 1791829556369
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {
+            "specialty": "Cardiology"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791829558316
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829559675
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "doctor_id": "10000000-0000-4000-8000-000000000002",
+            "start_at": "2026-10-12T08:00:00-04:00",
+            "end_at": "2026-10-19T17:00:00-04:00"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Monday, October 12 at 9:00 AM with Dr. Sarah Chen, or Monday, October 12 at 9:30 AM with Dr. Sarah Chen, or Monday, October 12 at 10:00 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:00:00.000Z",
+                  "end_at": "2026-10-12T13:30:00.000Z",
+                  "when": "Monday, October 12 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:30:00.000Z",
+                  "end_at": "2026-10-12T14:00:00.000Z",
+                  "when": "Monday, October 12 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T14:00:00.000Z",
+                  "end_at": "2026-10-12T14:30:00.000Z",
+                  "when": "Monday, October 12 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T14:30:00.000Z",
+                  "end_at": "2026-10-12T15:00:00.000Z",
+                  "when": "Monday, October 12 at 10:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T15:00:00.000Z",
+                  "end_at": "2026-10-12T15:30:00.000Z",
+                  "when": "Monday, October 12 at 11:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T15:30:00.000Z",
+                  "end_at": "2026-10-12T16:00:00.000Z",
+                  "when": "Monday, October 12 at 11:30 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829560861
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {
+            "specialty": ""
+          },
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829566481
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "start_at": "2026-10-20T08:00:00-04:00",
+            "doctor_id": "10000000-0000-4000-8000-000000000002",
+            "end_at": "2026-10-20T12:00:00-04:00"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Tuesday, October 20 at 9:00 AM with Dr. Sarah Chen, or Tuesday, October 20 at 9:30 AM with Dr. Sarah Chen, or Tuesday, October 20 at 10:00 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T13:00:00.000Z",
+                  "end_at": "2026-10-20T13:30:00.000Z",
+                  "when": "Tuesday, October 20 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T13:30:00.000Z",
+                  "end_at": "2026-10-20T14:00:00.000Z",
+                  "when": "Tuesday, October 20 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T14:00:00.000Z",
+                  "end_at": "2026-10-20T14:30:00.000Z",
+                  "when": "Tuesday, October 20 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T14:30:00.000Z",
+                  "end_at": "2026-10-20T15:00:00.000Z",
+                  "when": "Tuesday, October 20 at 10:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T15:00:00.000Z",
+                  "end_at": "2026-10-20T15:30:00.000Z",
+                  "when": "Tuesday, October 20 at 11:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T15:30:00.000Z",
+                  "end_at": "2026-10-20T16:00:00.000Z",
+                  "when": "Tuesday, October 20 at 11:30 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829568489
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "date_of_birth": "1952-04-12",
+            "full_name": "Eleanor Vance"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3",
+              "patient_name": "Eleanor Vance"
+            }
+          },
+          "timestamp": 1791829624028
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "start_at": "2026-10-20T09:00:00-04:00",
+            "end_at": "2026-10-20T17:00:00-04:00",
+            "specialty": "Cardiology"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791829625336
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829626598
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "end_at": "2026-10-20T17:00:00-04:00",
+            "doctor_id": "10000000-0000-4000-8000-000000000002",
+            "start_at": "2026-10-20T09:00:00-04:00"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Tuesday, October 20 at 9:00 AM with Dr. Sarah Chen, or Tuesday, October 20 at 9:30 AM with Dr. Sarah Chen, or Tuesday, October 20 at 10:00 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T13:00:00.000Z",
+                  "end_at": "2026-10-20T13:30:00.000Z",
+                  "when": "Tuesday, October 20 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T13:30:00.000Z",
+                  "end_at": "2026-10-20T14:00:00.000Z",
+                  "when": "Tuesday, October 20 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T14:00:00.000Z",
+                  "end_at": "2026-10-20T14:30:00.000Z",
+                  "when": "Tuesday, October 20 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T14:30:00.000Z",
+                  "end_at": "2026-10-20T15:00:00.000Z",
+                  "when": "Tuesday, October 20 at 10:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T15:00:00.000Z",
+                  "end_at": "2026-10-20T15:30:00.000Z",
+                  "when": "Tuesday, October 20 at 11:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-20T15:30:00.000Z",
+                  "end_at": "2026-10-20T16:00:00.000Z",
+                  "when": "Tuesday, October 20 at 11:30 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829627802
+        },
+        {
+          "tool_name": "book_appointment",
+          "arguments": {
+            "reason": "Routine checkup",
+            "doctor_id": "10000000-0000-4000-8000-000000000002",
+            "end_at": "2026-10-20T13:30:00.000Z",
+            "start_at": "2026-10-20T13:00:00.000Z",
+            "patient_id": "bb2297ac-6b4b-4a3a-a4ec-7e85bf9089d3"
+          },
+          "result": {
+            "ok": true,
+            "code": "appointment_booked",
+            "message": "The appointment is booked.",
+            "data": {
+              "appointment_id": "377c893f-16d3-4087-aef4-976da3975d87",
+              "doctor_id": "10000000-0000-4000-8000-000000000002",
+              "doctor_name": "Dr. Sarah Chen",
+              "when": "Tuesday, October 20 at 9:00 AM",
+              "start_at": "2026-10-20T13:00:00.000Z",
+              "end_at": "2026-10-20T13:30:00.000Z",
+              "status": "booked",
+              "calendar_sync_status": "not_configured"
+            }
+          },
+          "timestamp": 1791829629049
+        },
+        {
+          "tool_name": "end_call",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "call_ended",
+            "message": "Call ended."
+          },
+          "timestamp": 1791829632966
+        }
+      ],
+      "grades": {
+        "db_state": {
+          "passed": true,
+          "reason": "DB state invariants satisfied: no overlaps, no duplicates, expectations met."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "The agent failed the confirmation requirement by failing to explicitly confirm the appointment details with the patient before executing the booking."
+        }
+      },
+      "turns_count": 13,
+      "duration_ms": 92892,
+      "tokens": {
+        "prompt_tokens": 108133,
+        "completion_tokens": 1086,
+        "total_tokens": 109219
+      },
+      "cost_usd": 0.005623849999999999
+    },
+    {
+      "scenario_id": "book-exist-02",
+      "category": "book_existing_patient",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "I am an existing patient, and I need to book a general consultation for next week. I'm on my lunch break so I'd like to make this quick."
+        },
+        {
+          "role": "agent",
+          "content": "Could you please tell me your full name and spell it out for me?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My name is Marcus Brody, M-A-R-C-U-S B-R-O-D-Y."
+        },
+        {
+          "role": "agent",
+          "content": "Could you also please provide your date of birth as year, month, and day?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My date of birth is 1980-09-24."
+        },
+        {
+          "role": "agent",
+          "content": "Dr. Sarah Chen has an opening on Monday, October 19 at 9:00 AM. Would you like to book that slot?",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Marcus Brody",
+                "date_of_birth": "1980-09-24"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+                  "patient_name": "Marcus Brody"
+                }
+              },
+              "timestamp": 1791829649079
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {
+                "specialty": "General Practice"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791829650864
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829651922
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "end_at": "2026-10-20T17:00:00-04:00",
+                "start_at": "2026-10-19T09:00:00-04:00",
+                "doctor_id": "10000000-0000-4000-8000-000000000002"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Monday, October 19 at 9:00 AM with Dr. Sarah Chen, or Monday, October 19 at 9:30 AM with Dr. Sarah Chen, or Monday, October 19 at 10:00 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-19T13:00:00.000Z",
+                      "end_at": "2026-10-19T13:30:00.000Z",
+                      "when": "Monday, October 19 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-19T13:30:00.000Z",
+                      "end_at": "2026-10-19T14:00:00.000Z",
+                      "when": "Monday, October 19 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-19T14:00:00.000Z",
+                      "end_at": "2026-10-19T14:30:00.000Z",
+                      "when": "Monday, October 19 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-19T14:30:00.000Z",
+                      "end_at": "2026-10-19T15:00:00.000Z",
+                      "when": "Monday, October 19 at 10:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-19T15:00:00.000Z",
+                      "end_at": "2026-10-19T15:30:00.000Z",
+                      "when": "Monday, October 19 at 11:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-19T15:30:00.000Z",
+                      "end_at": "2026-10-19T16:00:00.000Z",
+                      "when": "Monday, October 19 at 11:30 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829653150
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I'm looking for something next Wednesday, do you have any earlier slots on that day?"
+        },
+        {
+          "role": "agent",
+          "content": "Dr. Sarah Chen has openings next Wednesday at 9:00 AM, 9:30 AM, or 10:00 AM. Would you like one of those times?",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Marcus Brody",
+                "date_of_birth": "1980-09-24"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+                  "patient_name": "Marcus Brody"
+                }
+              },
+              "timestamp": 1791829657589
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "end_at": "2026-10-21T17:00:00-04:00",
+                "start_at": "2026-10-21T08:00:00-04:00",
+                "specialty": "General Practice"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791829660674
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829661671
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "start_at": "2026-10-21T08:00:00-04:00",
+                "end_at": "2026-10-21T17:00:00-04:00",
+                "doctor_id": "10000000-0000-4000-8000-000000000002"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Wednesday, October 21 at 9:00 AM with Dr. Sarah Chen, or Wednesday, October 21 at 9:30 AM with Dr. Sarah Chen, or Wednesday, October 21 at 10:00 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T13:00:00.000Z",
+                      "end_at": "2026-10-21T13:30:00.000Z",
+                      "when": "Wednesday, October 21 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T13:30:00.000Z",
+                      "end_at": "2026-10-21T14:00:00.000Z",
+                      "when": "Wednesday, October 21 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T14:00:00.000Z",
+                      "end_at": "2026-10-21T14:30:00.000Z",
+                      "when": "Wednesday, October 21 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T14:30:00.000Z",
+                      "end_at": "2026-10-21T15:00:00.000Z",
+                      "when": "Wednesday, October 21 at 10:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T15:00:00.000Z",
+                      "end_at": "2026-10-21T15:30:00.000Z",
+                      "when": "Wednesday, October 21 at 11:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T15:30:00.000Z",
+                      "end_at": "2026-10-21T16:00:00.000Z",
+                      "when": "Wednesday, October 21 at 11:30 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829662838
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I'll take the earliest one at 9:00 AM, please."
+        },
+        {
+          "role": "agent",
+          "content": "{\"ok\":true,\"code\":\"appointment_booked\",\"message\":\"The appointment is booked.\",\"data\":{\"appointment_id\":\"348a75ad-df3b-4820-9b6b-5039717b908d\",\"doctor_id\":\"10000000-0000-4000-8000-000000000002\",\"doctor_name\":\"Dr. Sarah Chen\",\"when\":\"Wednesday, October 21 at 9:00 AM\",\"start_at\":\"2026-10-21T13:00:00.000Z\",\"end_at\":\"2026-10-21T13:30:00.000Z\",\"status\":\"booked\",\"calendar_sync_status\":\"not_configured\"}}",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Marcus Brody",
+                "date_of_birth": "1980-09-24"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+                  "patient_name": "Marcus Brody"
+                }
+              },
+              "timestamp": 1791829747273
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {
+                "specialty": "General Practice"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791829748436
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829750175
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "specialty": "Family Medicine",
+                "end_at": "2026-10-22T00:00:00-05:00",
+                "start_at": "2026-10-21T00:00:00-05:00"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Wednesday, October 21 at 9:00 AM with Dr. Sarah Chen, or Wednesday, October 21 at 9:00 AM with Dr. Test, or Wednesday, October 21 at 9:30 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T13:00:00.000Z",
+                      "end_at": "2026-10-21T13:30:00.000Z",
+                      "when": "Wednesday, October 21 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T13:00:00.000Z",
+                      "end_at": "2026-10-21T13:30:00.000Z",
+                      "when": "Wednesday, October 21 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T13:30:00.000Z",
+                      "end_at": "2026-10-21T14:00:00.000Z",
+                      "when": "Wednesday, October 21 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T13:30:00.000Z",
+                      "end_at": "2026-10-21T14:00:00.000Z",
+                      "when": "Wednesday, October 21 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T14:00:00.000Z",
+                      "end_at": "2026-10-21T14:30:00.000Z",
+                      "when": "Wednesday, October 21 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-21T14:00:00.000Z",
+                      "end_at": "2026-10-21T14:30:00.000Z",
+                      "when": "Wednesday, October 21 at 10:00 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829751316
+            },
+            {
+              "tool_name": "book_appointment",
+              "arguments": {
+                "end_at": "2026-10-21T13:30:00.000Z",
+                "doctor_id": "10000000-0000-4000-8000-000000000002",
+                "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+                "reason": "general consultation",
+                "start_at": "2026-10-21T13:00:00.000Z"
+              },
+              "result": {
+                "ok": true,
+                "code": "appointment_booked",
+                "message": "The appointment is booked.",
+                "data": {
+                  "appointment_id": "348a75ad-df3b-4820-9b6b-5039717b908d",
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "when": "Wednesday, October 21 at 9:00 AM",
+                  "start_at": "2026-10-21T13:00:00.000Z",
+                  "end_at": "2026-10-21T13:30:00.000Z",
+                  "status": "booked",
+                  "calendar_sync_status": "not_configured"
+                }
+              },
+              "timestamp": 1791829753841
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "Great, thanks for getting that sorted. Have a good day, bye!"
+        },
+        {
+          "role": "agent",
+          "content": "Your appointment with Dr. Sarah Chen is booked for Wednesday, October 21 at 9:00 AM. Goodbye!",
+          "tool_calls": []
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Marcus Brody",
+            "date_of_birth": "1980-09-24"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+              "patient_name": "Marcus Brody"
+            }
+          },
+          "timestamp": 1791829649079
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {
+            "specialty": "General Practice"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791829650864
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829651922
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "end_at": "2026-10-20T17:00:00-04:00",
+            "start_at": "2026-10-19T09:00:00-04:00",
+            "doctor_id": "10000000-0000-4000-8000-000000000002"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Monday, October 19 at 9:00 AM with Dr. Sarah Chen, or Monday, October 19 at 9:30 AM with Dr. Sarah Chen, or Monday, October 19 at 10:00 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-19T13:00:00.000Z",
+                  "end_at": "2026-10-19T13:30:00.000Z",
+                  "when": "Monday, October 19 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-19T13:30:00.000Z",
+                  "end_at": "2026-10-19T14:00:00.000Z",
+                  "when": "Monday, October 19 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-19T14:00:00.000Z",
+                  "end_at": "2026-10-19T14:30:00.000Z",
+                  "when": "Monday, October 19 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-19T14:30:00.000Z",
+                  "end_at": "2026-10-19T15:00:00.000Z",
+                  "when": "Monday, October 19 at 10:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-19T15:00:00.000Z",
+                  "end_at": "2026-10-19T15:30:00.000Z",
+                  "when": "Monday, October 19 at 11:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-19T15:30:00.000Z",
+                  "end_at": "2026-10-19T16:00:00.000Z",
+                  "when": "Monday, October 19 at 11:30 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829653150
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Marcus Brody",
+            "date_of_birth": "1980-09-24"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+              "patient_name": "Marcus Brody"
+            }
+          },
+          "timestamp": 1791829657589
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "end_at": "2026-10-21T17:00:00-04:00",
+            "start_at": "2026-10-21T08:00:00-04:00",
+            "specialty": "General Practice"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791829660674
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829661671
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "start_at": "2026-10-21T08:00:00-04:00",
+            "end_at": "2026-10-21T17:00:00-04:00",
+            "doctor_id": "10000000-0000-4000-8000-000000000002"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Wednesday, October 21 at 9:00 AM with Dr. Sarah Chen, or Wednesday, October 21 at 9:30 AM with Dr. Sarah Chen, or Wednesday, October 21 at 10:00 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T13:00:00.000Z",
+                  "end_at": "2026-10-21T13:30:00.000Z",
+                  "when": "Wednesday, October 21 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T13:30:00.000Z",
+                  "end_at": "2026-10-21T14:00:00.000Z",
+                  "when": "Wednesday, October 21 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T14:00:00.000Z",
+                  "end_at": "2026-10-21T14:30:00.000Z",
+                  "when": "Wednesday, October 21 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T14:30:00.000Z",
+                  "end_at": "2026-10-21T15:00:00.000Z",
+                  "when": "Wednesday, October 21 at 10:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T15:00:00.000Z",
+                  "end_at": "2026-10-21T15:30:00.000Z",
+                  "when": "Wednesday, October 21 at 11:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T15:30:00.000Z",
+                  "end_at": "2026-10-21T16:00:00.000Z",
+                  "when": "Wednesday, October 21 at 11:30 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829662838
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Marcus Brody",
+            "date_of_birth": "1980-09-24"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+              "patient_name": "Marcus Brody"
+            }
+          },
+          "timestamp": 1791829747273
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {
+            "specialty": "General Practice"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791829748436
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829750175
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "specialty": "Family Medicine",
+            "end_at": "2026-10-22T00:00:00-05:00",
+            "start_at": "2026-10-21T00:00:00-05:00"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Wednesday, October 21 at 9:00 AM with Dr. Sarah Chen, or Wednesday, October 21 at 9:00 AM with Dr. Test, or Wednesday, October 21 at 9:30 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T13:00:00.000Z",
+                  "end_at": "2026-10-21T13:30:00.000Z",
+                  "when": "Wednesday, October 21 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T13:00:00.000Z",
+                  "end_at": "2026-10-21T13:30:00.000Z",
+                  "when": "Wednesday, October 21 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T13:30:00.000Z",
+                  "end_at": "2026-10-21T14:00:00.000Z",
+                  "when": "Wednesday, October 21 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T13:30:00.000Z",
+                  "end_at": "2026-10-21T14:00:00.000Z",
+                  "when": "Wednesday, October 21 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T14:00:00.000Z",
+                  "end_at": "2026-10-21T14:30:00.000Z",
+                  "when": "Wednesday, October 21 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-21T14:00:00.000Z",
+                  "end_at": "2026-10-21T14:30:00.000Z",
+                  "when": "Wednesday, October 21 at 10:00 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829751316
+        },
+        {
+          "tool_name": "book_appointment",
+          "arguments": {
+            "end_at": "2026-10-21T13:30:00.000Z",
+            "doctor_id": "10000000-0000-4000-8000-000000000002",
+            "patient_id": "6a2dbb49-a81e-4db2-8895-d87e1cbf0688",
+            "reason": "general consultation",
+            "start_at": "2026-10-21T13:00:00.000Z"
+          },
+          "result": {
+            "ok": true,
+            "code": "appointment_booked",
+            "message": "The appointment is booked.",
+            "data": {
+              "appointment_id": "348a75ad-df3b-4820-9b6b-5039717b908d",
+              "doctor_id": "10000000-0000-4000-8000-000000000002",
+              "doctor_name": "Dr. Sarah Chen",
+              "when": "Wednesday, October 21 at 9:00 AM",
+              "start_at": "2026-10-21T13:00:00.000Z",
+              "end_at": "2026-10-21T13:30:00.000Z",
+              "status": "booked",
+              "calendar_sync_status": "not_configured"
+            }
+          },
+          "timestamp": 1791829753841
+        }
+      ],
+      "grades": {
+        "db_state": {
+          "passed": true,
+          "reason": "DB state invariants satisfied: no overlaps, no duplicates, expectations met."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "The agent failed to confirm the appointment before executing the booking and leaked raw JSON data into the conversation."
+        }
+      },
+      "turns_count": 13,
+      "duration_ms": 117850,
+      "tokens": {
+        "prompt_tokens": 216134,
+        "completion_tokens": 2120,
+        "total_tokens": 218254
+      },
+      "cost_usd": 0.0112307
+    },
+    {
+      "scenario_id": "reg-new-01",
+      "category": "register_new_patient_then_book",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "I am a new patient."
+        },
+        {
+          "role": "agent",
+          "content": "Welcome to our clinic! Could you please tell me your full name and spell it out for me?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My name is Claire Redfield, that's C-L-A-I-R-E R-E-D-F-I-E-L-D."
+        },
+        {
+          "role": "agent",
+          "content": "Thanks, Claire. What is your date of birth?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My date of birth is June 15th, 1994."
+        },
+        {
+          "role": "agent",
+          "content": "And what is the best phone number to reach you at?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "The best phone number to reach me at is 555-456-7890."
+        },
+        {
+          "role": "agent",
+          "content": "Just to confirm, your name is Claire Redfield, born June 15th, 1994, and your phone number is 555-456-7890?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "Yes, that is correct."
+        },
+        {
+          "role": "agent",
+          "content": "What is the reason for your visit today?",
+          "tool_calls": [
+            {
+              "tool_name": "create_patient",
+              "arguments": {
+                "full_name": "Claire Redfield",
+                "date_of_birth": "1994-06-15",
+                "phone": "555-456-7890"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_created",
+                "message": "I've created your patient record. Let's continue with scheduling your appointment.",
+                "data": {
+                  "patient_id": "73c3464f-8baf-4e87-a375-b80a93411de2",
+                  "patient_name": "Claire Redfield"
+                }
+              },
+              "timestamp": 1791829795830
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I just need to establish care since I recently moved to town."
+        },
+        {
+          "role": "agent",
+          "content": "Would you prefer an appointment with Dr. Sarah Chen on Monday, October 12 at 9:00 AM, or at 9:30 AM?",
+          "tool_calls": [
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829801133
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "start_at": "2026-10-12T08:00:00-05:00",
+                "end_at": "2026-10-14T17:00:00-05:00",
+                "specialty": "Family Medicine"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Monday, October 12 at 9:00 AM with Dr. Sarah Chen, or Monday, October 12 at 9:00 AM with Dr. Test, or Monday, October 12 at 9:30 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:00:00.000Z",
+                      "end_at": "2026-10-12T13:30:00.000Z",
+                      "when": "Monday, October 12 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:00:00.000Z",
+                      "end_at": "2026-10-12T13:30:00.000Z",
+                      "when": "Monday, October 12 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:30:00.000Z",
+                      "end_at": "2026-10-12T14:00:00.000Z",
+                      "when": "Monday, October 12 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:30:00.000Z",
+                      "end_at": "2026-10-12T14:00:00.000Z",
+                      "when": "Monday, October 12 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T14:00:00.000Z",
+                      "end_at": "2026-10-12T14:30:00.000Z",
+                      "when": "Monday, October 12 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T14:00:00.000Z",
+                      "end_at": "2026-10-12T14:30:00.000Z",
+                      "when": "Monday, October 12 at 10:00 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829802414
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "create_patient",
+          "arguments": {
+            "full_name": "Claire Redfield",
+            "date_of_birth": "1994-06-15",
+            "phone": "555-456-7890"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_created",
+            "message": "I've created your patient record. Let's continue with scheduling your appointment.",
+            "data": {
+              "patient_id": "73c3464f-8baf-4e87-a375-b80a93411de2",
+              "patient_name": "Claire Redfield"
+            }
+          },
+          "timestamp": 1791829795830
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829801133
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "start_at": "2026-10-12T08:00:00-05:00",
+            "end_at": "2026-10-14T17:00:00-05:00",
+            "specialty": "Family Medicine"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Monday, October 12 at 9:00 AM with Dr. Sarah Chen, or Monday, October 12 at 9:00 AM with Dr. Test, or Monday, October 12 at 9:30 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:00:00.000Z",
+                  "end_at": "2026-10-12T13:30:00.000Z",
+                  "when": "Monday, October 12 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:00:00.000Z",
+                  "end_at": "2026-10-12T13:30:00.000Z",
+                  "when": "Monday, October 12 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:30:00.000Z",
+                  "end_at": "2026-10-12T14:00:00.000Z",
+                  "when": "Monday, October 12 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:30:00.000Z",
+                  "end_at": "2026-10-12T14:00:00.000Z",
+                  "when": "Monday, October 12 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T14:00:00.000Z",
+                  "end_at": "2026-10-12T14:30:00.000Z",
+                  "when": "Monday, October 12 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T14:00:00.000Z",
+                  "end_at": "2026-10-12T14:30:00.000Z",
+                  "when": "Monday, October 12 at 10:00 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829802414
+        }
+      ],
+      "grades": {
+        "db_state": {
+          "passed": false,
+          "reason": "Expected booked appointment in database, but none was found for caller."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "The agent failed to offer the requested appointment time for 'next Thursday' and instead offered slots for a different day."
+        }
+      },
+      "turns_count": 13,
+      "duration_ms": 88017,
+      "tokens": {
+        "prompt_tokens": 269895,
+        "completion_tokens": 2538,
+        "total_tokens": 272433
+      },
+      "cost_usd": 0.014002349999999998
+    },
+    {
+      "scenario_id": "reg-new-02",
+      "category": "register_new_patient_then_book",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "I am a new patient."
+        },
+        {
+          "role": "agent",
+          "content": "Welcome to the clinic! Could you please spell your full name for me?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My name is Liam Gallagher, spelled L-I-A-M G-A-L-L-A-G-H-E-R."
+        },
+        {
+          "role": "agent",
+          "content": "Thank you, Liam. What is your date of birth?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My date of birth is November 3rd, 2002."
+        },
+        {
+          "role": "agent",
+          "content": "And what is the best phone number to reach you at?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My phone number is +15555678901."
+        },
+        {
+          "role": "agent",
+          "content": "Let me make sure I have this right: your name is Liam Gallagher, your date of birth is November 3rd, 2002, and your phone number is +15555678901. Is that all correct?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "Yes, that is correct."
+        },
+        {
+          "role": "agent",
+          "content": "What is the reason for your visit today?",
+          "tool_calls": [
+            {
+              "tool_name": "create_patient",
+              "arguments": {
+                "date_of_birth": "2002-11-03",
+                "full_name": "Liam Gallagher",
+                "phone": "+15555678901"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_created",
+                "message": "I've created your patient record. Let's continue with scheduling your appointment.",
+                "data": {
+                  "patient_id": "01c13d75-bcd3-4f04-a040-e4ea5c660922",
+                  "patient_name": "Liam Gallagher"
+                }
+              },
+              "timestamp": 1791829901687
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I need to schedule an appointment for my annual checkup."
+        },
+        {
+          "role": "agent",
+          "content": "I have an opening today, Monday at 9:00 AM with Dr. Sarah Chen, or Monday at 9:30 AM with Dr. Sarah Chen. Which one would you prefer?",
+          "tool_calls": [
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829906410
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "start_at": "2026-10-12T08:00:00-05:00",
+                "specialty": "Family Medicine",
+                "end_at": "2026-10-14T17:00:00-05:00"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 6 available times. The first options are Monday, October 12 at 9:00 AM with Dr. Sarah Chen, or Monday, October 12 at 9:00 AM with Dr. Test, or Monday, October 12 at 9:30 AM with Dr. Sarah Chen.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:00:00.000Z",
+                      "end_at": "2026-10-12T13:30:00.000Z",
+                      "when": "Monday, October 12 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:00:00.000Z",
+                      "end_at": "2026-10-12T13:30:00.000Z",
+                      "when": "Monday, October 12 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:30:00.000Z",
+                      "end_at": "2026-10-12T14:00:00.000Z",
+                      "when": "Monday, October 12 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T13:30:00.000Z",
+                      "end_at": "2026-10-12T14:00:00.000Z",
+                      "when": "Monday, October 12 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T14:00:00.000Z",
+                      "end_at": "2026-10-12T14:30:00.000Z",
+                      "when": "Monday, October 12 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-12T14:00:00.000Z",
+                      "end_at": "2026-10-12T14:30:00.000Z",
+                      "when": "Monday, October 12 at 10:00 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829907632
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "create_patient",
+          "arguments": {
+            "date_of_birth": "2002-11-03",
+            "full_name": "Liam Gallagher",
+            "phone": "+15555678901"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_created",
+            "message": "I've created your patient record. Let's continue with scheduling your appointment.",
+            "data": {
+              "patient_id": "01c13d75-bcd3-4f04-a040-e4ea5c660922",
+              "patient_name": "Liam Gallagher"
+            }
+          },
+          "timestamp": 1791829901687
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829906410
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "start_at": "2026-10-12T08:00:00-05:00",
+            "specialty": "Family Medicine",
+            "end_at": "2026-10-14T17:00:00-05:00"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 6 available times. The first options are Monday, October 12 at 9:00 AM with Dr. Sarah Chen, or Monday, October 12 at 9:00 AM with Dr. Test, or Monday, October 12 at 9:30 AM with Dr. Sarah Chen.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:00:00.000Z",
+                  "end_at": "2026-10-12T13:30:00.000Z",
+                  "when": "Monday, October 12 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:00:00.000Z",
+                  "end_at": "2026-10-12T13:30:00.000Z",
+                  "when": "Monday, October 12 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:30:00.000Z",
+                  "end_at": "2026-10-12T14:00:00.000Z",
+                  "when": "Monday, October 12 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T13:30:00.000Z",
+                  "end_at": "2026-10-12T14:00:00.000Z",
+                  "when": "Monday, October 12 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T14:00:00.000Z",
+                  "end_at": "2026-10-12T14:30:00.000Z",
+                  "when": "Monday, October 12 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-12T14:00:00.000Z",
+                  "end_at": "2026-10-12T14:30:00.000Z",
+                  "when": "Monday, October 12 at 10:00 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829907632
+        }
+      ],
+      "grades": {
+        "db_state": {
+          "passed": false,
+          "reason": "Expected booked appointment in database, but none was found for caller."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "The agent failed to offer slots for the requested time frame (next Friday) and instead offered slots for today, violating the conversational goal."
+        }
+      },
+      "turns_count": 13,
+      "duration_ms": 27982,
+      "tokens": {
+        "prompt_tokens": 323482,
+        "completion_tokens": 2960,
+        "total_tokens": 326442
+      },
+      "cost_usd": 0.016766099999999992
+    },
+    {
+      "scenario_id": "resched-01",
+      "category": "reschedule",
+      "run_index": 1,
+      "passed": false,
+      "transcript": [
+        {
+          "role": "agent",
+          "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+        },
+        {
+          "role": "patient",
+          "content": "I am an existing patient, I've been here before."
+        },
+        {
+          "role": "agent",
+          "content": "Could you please tell me your full name and spell it out for me?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My name is Arthur Pendelton, A-R-T-H-U-R P-E-N-D-E-L-T-O-N."
+        },
+        {
+          "role": "agent",
+          "content": "What is your date of birth?",
+          "tool_calls": []
+        },
+        {
+          "role": "patient",
+          "content": "My date of birth is March 30th, 1975."
+        },
+        {
+          "role": "agent",
+          "content": "What is the reason for your visit today, and do you have a preferred doctor or specialty?",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "date_of_birth": "1975-03-30",
+                "full_name": "Arthur Pendelton"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+                  "patient_name": "Arthur Pendelton"
+                }
+              },
+              "timestamp": 1791829989215
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I actually already have an appointment scheduled for this Tuesday, but my work schedule shifted and I need to move it to Thursday afternoon instead."
+        },
+        {
+          "role": "agent",
+          "content": "{\"ok\":false,\"code\":\"no_availability\",\"message\":\"There aren't any available appointments in that time range.\"}",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Arthur Pendelton",
+                "date_of_birth": "1975-03-30"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+                  "patient_name": "Arthur Pendelton"
+                }
+              },
+              "timestamp": 1791829993903
+            },
+            {
+              "tool_name": "list_patient_appointments",
+              "arguments": {
+                "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960"
+              },
+              "result": {
+                "ok": true,
+                "code": "appointments_found",
+                "message": "I found 1 upcoming appointment: Tuesday, October 20 at 10:00 AM with Dr. Test.",
+                "data": {
+                  "appointments": [
+                    {
+                      "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                      "doctor_name": "Dr. Test",
+                      "reason": "Consultation",
+                      "when": "Tuesday, October 20 at 10:00 AM",
+                      "start_at": "2026-10-20T14:00:00.000Z",
+                      "end_at": "2026-10-20T14:30:00.000Z"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829994806
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "end_at": "2026-10-22T17:00:00-05:00",
+                "specialty": "General Practice",
+                "start_at": "2026-10-22T12:00:00-05:00"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791829995956
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791829996982
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "start_at": "2026-10-22T12:00:00-05:00",
+                "end_at": "2026-10-22T17:00:00-05:00",
+                "specialty": "Family Medicine"
+              },
+              "result": {
+                "ok": false,
+                "code": "no_availability",
+                "message": "There aren't any available appointments in that time range."
+              },
+              "timestamp": 1791829998100
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "Ah, okay. What about Thursday morning then?"
+        },
+        {
+          "role": "agent",
+          "content": "{\"ok\":true,\"code\":\"availability_found\",\"message\":\"I found 4 available times. The first options are Thursday, October 22 at 9:00 AM with Dr. Test, or Thursday, October 22 at 9:30 AM with Dr. Test, or Thursday, October 22 at 10:00 AM with Dr. Test.\",\"data\":{\"slots\":[{\"doctor_id\":\"10000000-0000-4000-8000-000000000001\",\"doctor_name\":\"Dr. Test\",\"timezone\":\"America/New_York\",\"start_at\":\"2026-10-22T13:00:00.000Z\",\"end_at\":\"2026-10-22T13:30:00.000Z\",\"when\":\"Thursday, October 22 at 9:00 AM\"},{\"doctor_id\":\"10000000-0000-4000-8000-000000000001\",\"doctor_name\":\"Dr. Test\",\"timezone\":\"America/New_York\",\"start_at\":\"2026-10-22T13:30:00.000Z\",\"end_at\":\"2026-10-22T14:00:00.000Z\",\"when\":\"Thursday, October 22 at 9:30 AM\"},{\"doctor_id\":\"10000000-0000-4000-8000-000000000001\",\"doctor_name\":\"Dr. Test\",\"timezone\":\"America/New_York\",\"start_at\":\"2026-10-22T14:00:00.000Z\",\"end_at\":\"2026-10-22T14:30:00.000Z\",\"when\":\"Thursday, October 22 at 10:00 AM\"},{\"doctor_id\":\"10000000-0000-4000-8000-000000000001\",\"doctor_name\":\"Dr. Test\",\"timezone\":\"America/New_York\",\"start_at\":\"2026-10-22T14:30:00.000Z\",\"end_at\":\"2026-10-22T15:00:00.000Z\",\"when\":\"Thursday, October 22 at 10:30 AM\"}]}}",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "full_name": "Arthur Pendelton",
+                "date_of_birth": "1975-03-30"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+                  "patient_name": "Arthur Pendelton"
+                }
+              },
+              "timestamp": 1791830001907
+            },
+            {
+              "tool_name": "list_patient_appointments",
+              "arguments": {
+                "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960"
+              },
+              "result": {
+                "ok": true,
+                "code": "appointments_found",
+                "message": "I found 1 upcoming appointment: Tuesday, October 20 at 10:00 AM with Dr. Test.",
+                "data": {
+                  "appointments": [
+                    {
+                      "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                      "doctor_name": "Dr. Test",
+                      "reason": "Consultation",
+                      "when": "Tuesday, October 20 at 10:00 AM",
+                      "start_at": "2026-10-20T14:00:00.000Z",
+                      "end_at": "2026-10-20T14:30:00.000Z"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791830003087
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "end_at": "2026-10-22T13:00:00Z",
+                "start_at": "2026-10-22T08:00:00Z",
+                "specialty": "General Practice"
+              },
+              "result": {
+                "ok": false,
+                "code": "doctor_not_found",
+                "message": "I couldn't find an active doctor matching that request."
+              },
+              "timestamp": 1791830004199
+            },
+            {
+              "tool_name": "list_doctors",
+              "arguments": {},
+              "result": {
+                "ok": true,
+                "code": "doctors_found",
+                "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+                "data": {
+                  "doctors": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000002",
+                      "doctor_name": "Dr. Sarah Chen",
+                      "specialty": "Family Medicine"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "specialty": "Family Medicine"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791830005391
+            },
+            {
+              "tool_name": "check_availability",
+              "arguments": {
+                "doctor_id": "10000000-0000-4000-8000-000000000001",
+                "end_at": "2026-10-22T17:00:00-04:00",
+                "start_at": "2026-10-22T08:00:00-04:00"
+              },
+              "result": {
+                "ok": true,
+                "code": "availability_found",
+                "message": "I found 4 available times. The first options are Thursday, October 22 at 9:00 AM with Dr. Test, or Thursday, October 22 at 9:30 AM with Dr. Test, or Thursday, October 22 at 10:00 AM with Dr. Test.",
+                "data": {
+                  "slots": [
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-22T13:00:00.000Z",
+                      "end_at": "2026-10-22T13:30:00.000Z",
+                      "when": "Thursday, October 22 at 9:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-22T13:30:00.000Z",
+                      "end_at": "2026-10-22T14:00:00.000Z",
+                      "when": "Thursday, October 22 at 9:30 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-22T14:00:00.000Z",
+                      "end_at": "2026-10-22T14:30:00.000Z",
+                      "when": "Thursday, October 22 at 10:00 AM"
+                    },
+                    {
+                      "doctor_id": "10000000-0000-4000-8000-000000000001",
+                      "doctor_name": "Dr. Test",
+                      "timezone": "America/New_York",
+                      "start_at": "2026-10-22T14:30:00.000Z",
+                      "end_at": "2026-10-22T15:00:00.000Z",
+                      "when": "Thursday, October 22 at 10:30 AM"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791830006577
+            }
+          ]
+        },
+        {
+          "role": "patient",
+          "content": "I'll take the 9:00 AM slot on Thursday, please."
+        },
+        {
+          "role": "agent",
+          "content": "I have successfully rescheduled your appointment to Thursday, October 22 at 9:00 AM with Dr. Test.",
+          "tool_calls": [
+            {
+              "tool_name": "find_patient",
+              "arguments": {
+                "date_of_birth": "1975-03-30",
+                "full_name": "Arthur Pendelton"
+              },
+              "result": {
+                "ok": true,
+                "code": "patient_verified",
+                "message": "Thank you. I verified the patient record.",
+                "data": {
+                  "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+                  "patient_name": "Arthur Pendelton"
+                }
+              },
+              "timestamp": 1791830009833
+            },
+            {
+              "tool_name": "list_patient_appointments",
+              "arguments": {
+                "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960"
+              },
+              "result": {
+                "ok": true,
+                "code": "appointments_found",
+                "message": "I found 1 upcoming appointment: Tuesday, October 20 at 10:00 AM with Dr. Test.",
+                "data": {
+                  "appointments": [
+                    {
+                      "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                      "doctor_name": "Dr. Test",
+                      "reason": "Consultation",
+                      "when": "Tuesday, October 20 at 10:00 AM",
+                      "start_at": "2026-10-20T14:00:00.000Z",
+                      "end_at": "2026-10-20T14:30:00.000Z"
+                    }
+                  ]
+                }
+              },
+              "timestamp": 1791830011293
+            },
+            {
+              "tool_name": "reschedule_appointment",
+              "arguments": {
+                "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+                "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                "start_at": "2026-10-22T13:00:00.000Z",
+                "end_at": "2026-10-22T13:30:00.000Z"
+              },
+              "result": {
+                "ok": true,
+                "code": "appointment_rescheduled",
+                "message": "The appointment is rescheduled.",
+                "data": {
+                  "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "when": "Thursday, October 22 at 9:00 AM",
+                  "start_at": "2026-10-22T13:00:00.000Z",
+                  "end_at": "2026-10-22T13:30:00.000Z",
+                  "status": "booked",
+                  "calendar_sync_status": "not_configured"
+                }
+              },
+              "timestamp": 1791830012382
+            }
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "date_of_birth": "1975-03-30",
+            "full_name": "Arthur Pendelton"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+              "patient_name": "Arthur Pendelton"
+            }
+          },
+          "timestamp": 1791829989215
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Arthur Pendelton",
+            "date_of_birth": "1975-03-30"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+              "patient_name": "Arthur Pendelton"
+            }
+          },
+          "timestamp": 1791829993903
+        },
+        {
+          "tool_name": "list_patient_appointments",
+          "arguments": {
+            "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960"
+          },
+          "result": {
+            "ok": true,
+            "code": "appointments_found",
+            "message": "I found 1 upcoming appointment: Tuesday, October 20 at 10:00 AM with Dr. Test.",
+            "data": {
+              "appointments": [
+                {
+                  "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                  "doctor_name": "Dr. Test",
+                  "reason": "Consultation",
+                  "when": "Tuesday, October 20 at 10:00 AM",
+                  "start_at": "2026-10-20T14:00:00.000Z",
+                  "end_at": "2026-10-20T14:30:00.000Z"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829994806
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "end_at": "2026-10-22T17:00:00-05:00",
+            "specialty": "General Practice",
+            "start_at": "2026-10-22T12:00:00-05:00"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791829995956
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791829996982
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "start_at": "2026-10-22T12:00:00-05:00",
+            "end_at": "2026-10-22T17:00:00-05:00",
+            "specialty": "Family Medicine"
+          },
+          "result": {
+            "ok": false,
+            "code": "no_availability",
+            "message": "There aren't any available appointments in that time range."
+          },
+          "timestamp": 1791829998100
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "full_name": "Arthur Pendelton",
+            "date_of_birth": "1975-03-30"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+              "patient_name": "Arthur Pendelton"
+            }
+          },
+          "timestamp": 1791830001907
+        },
+        {
+          "tool_name": "list_patient_appointments",
+          "arguments": {
+            "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960"
+          },
+          "result": {
+            "ok": true,
+            "code": "appointments_found",
+            "message": "I found 1 upcoming appointment: Tuesday, October 20 at 10:00 AM with Dr. Test.",
+            "data": {
+              "appointments": [
+                {
+                  "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                  "doctor_name": "Dr. Test",
+                  "reason": "Consultation",
+                  "when": "Tuesday, October 20 at 10:00 AM",
+                  "start_at": "2026-10-20T14:00:00.000Z",
+                  "end_at": "2026-10-20T14:30:00.000Z"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791830003087
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "end_at": "2026-10-22T13:00:00Z",
+            "start_at": "2026-10-22T08:00:00Z",
+            "specialty": "General Practice"
+          },
+          "result": {
+            "ok": false,
+            "code": "doctor_not_found",
+            "message": "I couldn't find an active doctor matching that request."
+          },
+          "timestamp": 1791830004199
+        },
+        {
+          "tool_name": "list_doctors",
+          "arguments": {},
+          "result": {
+            "ok": true,
+            "code": "doctors_found",
+            "message": "Our doctors are Dr. Sarah Chen in Family Medicine, Dr. Test in Family Medicine.",
+            "data": {
+              "doctors": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000002",
+                  "doctor_name": "Dr. Sarah Chen",
+                  "specialty": "Family Medicine"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "specialty": "Family Medicine"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791830005391
+        },
+        {
+          "tool_name": "check_availability",
+          "arguments": {
+            "doctor_id": "10000000-0000-4000-8000-000000000001",
+            "end_at": "2026-10-22T17:00:00-04:00",
+            "start_at": "2026-10-22T08:00:00-04:00"
+          },
+          "result": {
+            "ok": true,
+            "code": "availability_found",
+            "message": "I found 4 available times. The first options are Thursday, October 22 at 9:00 AM with Dr. Test, or Thursday, October 22 at 9:30 AM with Dr. Test, or Thursday, October 22 at 10:00 AM with Dr. Test.",
+            "data": {
+              "slots": [
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-22T13:00:00.000Z",
+                  "end_at": "2026-10-22T13:30:00.000Z",
+                  "when": "Thursday, October 22 at 9:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-22T13:30:00.000Z",
+                  "end_at": "2026-10-22T14:00:00.000Z",
+                  "when": "Thursday, October 22 at 9:30 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-22T14:00:00.000Z",
+                  "end_at": "2026-10-22T14:30:00.000Z",
+                  "when": "Thursday, October 22 at 10:00 AM"
+                },
+                {
+                  "doctor_id": "10000000-0000-4000-8000-000000000001",
+                  "doctor_name": "Dr. Test",
+                  "timezone": "America/New_York",
+                  "start_at": "2026-10-22T14:30:00.000Z",
+                  "end_at": "2026-10-22T15:00:00.000Z",
+                  "when": "Thursday, October 22 at 10:30 AM"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791830006577
+        },
+        {
+          "tool_name": "find_patient",
+          "arguments": {
+            "date_of_birth": "1975-03-30",
+            "full_name": "Arthur Pendelton"
+          },
+          "result": {
+            "ok": true,
+            "code": "patient_verified",
+            "message": "Thank you. I verified the patient record.",
+            "data": {
+              "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+              "patient_name": "Arthur Pendelton"
+            }
+          },
+          "timestamp": 1791830009833
+        },
+        {
+          "tool_name": "list_patient_appointments",
+          "arguments": {
+            "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960"
+          },
+          "result": {
+            "ok": true,
+            "code": "appointments_found",
+            "message": "I found 1 upcoming appointment: Tuesday, October 20 at 10:00 AM with Dr. Test.",
+            "data": {
+              "appointments": [
+                {
+                  "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+                  "doctor_name": "Dr. Test",
+                  "reason": "Consultation",
+                  "when": "Tuesday, October 20 at 10:00 AM",
+                  "start_at": "2026-10-20T14:00:00.000Z",
+                  "end_at": "2026-10-20T14:30:00.000Z"
+                }
+              ]
+            }
+          },
+          "timestamp": 1791830011293
+        },
+        {
+          "tool_name": "reschedule_appointment",
+          "arguments": {
+            "patient_id": "9e379662-c356-4cbc-b3b4-0da9321c3960",
+            "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+            "start_at": "2026-10-22T13:00:00.000Z",
+            "end_at": "2026-10-22T13:30:00.000Z"
+          },
+          "result": {
+            "ok": true,
+            "code": "appointment_rescheduled",
+            "message": "The appointment is rescheduled.",
+            "data": {
+              "appointment_id": "2f4e958c-9826-449a-9346-3b909de49ea3",
+              "doctor_id": "10000000-0000-4000-8000-000000000001",
+              "doctor_name": "Dr. Test",
+              "when": "Thursday, October 22 at 9:00 AM",
+              "start_at": "2026-10-22T13:00:00.000Z",
+              "end_at": "2026-10-22T13:30:00.000Z",
+              "status": "booked",
+              "calendar_sync_status": "not_configured"
+            }
+          },
+          "timestamp": 1791830012382
+        }
+      ],
+      "grades": {
+        "db_state": {
+          "passed": true,
+          "reason": "DB state invariants satisfied: no overlaps, no duplicates, expectations met."
+        },
+        "tool_trace": {
+          "passed": true,
+          "reason": "Tool trace valid: proper identification sequence, availability checked, and arguments aligned."
+        },
+        "llm_judge": {
+          "passed": false,
+          "reason": "The agent failed the conversational style rubric by offering four slots instead of the maximum of three and by reading raw JSON data directly to the patient."
+        }
+      },
+      "turns_count": 13,
+      "duration_ms": 84488,
+      "tokens": {
+        "prompt_tokens": 432529,
+        "completion_tokens": 4029,
+        "total_tokens": 436558
+      },
+      "cost_usd": 0.02243224999999999
+    }
+  ]
+}

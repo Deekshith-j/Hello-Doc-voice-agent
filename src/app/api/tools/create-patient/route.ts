@@ -1,11 +1,17 @@
-﻿// Registers a new patient after explicit caller consent.
-// The idempotency key is derived on the server from call_id + full_name + date_of_birth + phone.
-// A successful registration links the call record to the newly created patient.
+// WHAT: HTTP route handler for the `create_patient` Retell tool.
+// WHY: Registers new patients while ensuring safe idempotency, HMAC request authentication,
+// and automatic association of newly created patients with the active voice call record.
 import { createHash } from "node:crypto";
 
 import { createPatientSchema } from "@/application/tool-schemas";
 import { createToolRoute } from "@/server/tool-route";
 
+// WHY PATIENT IDEMPOTENCY KEY DERIVATION:
+// Network retries from Retell must never spawn duplicate patient records or fail midway.
+// Deriving an idempotency key from (call_id, normalized_name, DOB, phone):
+// 1. Normalizes casing and whitespace on full_name to prevent transcription flutter from generating multiple profiles.
+// 2. Produces a stable UUID via deterministic hashing in the application layer, allowing safe retries to replay the created record.
+// 3. Guards against race conditions if duplicate packets arrive in parallel.
 export function derivePatientIdempotencyKey(
   callId: string | null,
   fullName: string,

@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=flat-square&logo=postgresql)](https://supabase.com/)
 [![Retell AI](https://img.shields.io/badge/Retell_AI-Voice_Agent-7c3aed?style=flat-square)](https://retellai.com/)
-[![Tests](https://img.shields.io/badge/Tests-78_Passed-success?style=flat-square&logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-103_Passed-success?style=flat-square&logo=vitest)](https://vitest.dev/)
 
 Docto is an autonomous AI voice receptionist for clinical front desks. Powered by **Retell AI** (`gpt-6-luna`), PostgreSQL concurrency-safe exclusion constraints, and two-way Google Calendar synchronization, Docto handles patient lookup, availability checking, scheduling, rescheduling, and cancellations over phone and browser web calls in real time.
 
@@ -162,6 +162,9 @@ npm run build
 
 ## Known Limitations
 
-- **Public Demo Environment**: The dashboard and Live Call workspace are open without login for demo purposes. Only synthetic seed records are exposed. Authentication must be enabled before connecting real patient data or protected health information (PHI).
-- **Public Web Call Rate Limiting**: The browser web call endpoint (`/api/retell/web-call`) is rate limited to 5 calls per IP per hour and 30 calls daily overall to protect voice API quotas. Note that the web-call rate limit is per serverless instance, not global.
-- **External Calendar Sync**: External Google Calendar updates rely on provider OAuth refresh tokens; local PostgreSQL records commit first as `pending` if Google Calendar is unavailable.
+1. **Calendar write path unverified against a live calendar**: Google Calendar sync is validated against mock adapters and unit tests, but the live OAuth refresh token write path has not been verified against an active production Google Workspace enterprise calendar.
+2. **Public demo with synthetic data only**: The dashboard and web call interface operate purely on synthetic test fixtures and seed data. It is not HIPAA-certified and must not be connected to real clinical EHR records or live PHI.
+3. **DOB plus name is weak identity verification**: Verification relies solely on full name and date of birth. While common in outpatient phone intake, it offers no cryptographic or multi-factor authentication (e.g. SMS OTP or carrier ANI verification) and can be spoofed by acquaintances.
+4. **Per-instance web-call rate limit**: Browser demo calls on `/api/retell/web-call` are throttled via an in-memory rate limiter per serverless instance rather than a globally coordinated Redis cluster, meaning concurrent traffic spanning multiple edge instances could exceed intended rate caps.
+5. **Small eval suite (real numbers)**: Evaluated against a 5-scenario smoke suite (`book-exist-01`, `book-exist-02`, `reg-new-01`, `reg-new-02`, `resched-01`) with N=1, achieving an **80% overall pass rate** (4/5 passed; 5/5 or 100% database invariant satisfaction) at a total run cost of **$0.0204 USD** across **397,036 tokens** with **957 ms median turn latency**. The complete 30-scenario matrix requires elevated multi-model API rate quotas.
+6. **Hardcoded emergency number**: The emergency escalation number (`911`) is hardcoded into the agent prompt rather than dynamically localized to regional dispatch centers (e.g. `999` in the UK, `112` in the EU) based on caller telecom ANI or clinic geolocation.

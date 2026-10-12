@@ -1,3 +1,6 @@
+// WHAT: Evaluator calibration runner benchmarking LLM judge accuracy against hand-labeled transcripts.
+// WHY: Ensures the judge model's rubric alignment matches human clinical supervision before relying on it
+// for automated regression testing and scoring.
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";

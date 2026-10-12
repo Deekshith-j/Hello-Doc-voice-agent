@@ -1,4 +1,6 @@
-// Displays active clinic providers, their weekly working schedules, and calendar sync integration status.
+// WHAT: Doctor roster and weekly schedule dashboard view.
+// WHY: Displays clinic physician availability rules, upcoming leave, and external calendar sync status,
+// allowing operators to verify that slot generation accurately reflects current provider schedules.
 import {
   EmptyState,
   PageContainer,

@@ -82,6 +82,14 @@ CREATE TABLE appointments (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT appointments_valid_range_check
     CHECK (NOT isempty(time_span) AND lower_inc(time_span) AND NOT upper_inc(time_span)),
+  -- WHY EXCLUSION CONSTRAINT:
+  -- Application-level read-then-write (SELECT ... WHERE overlaps followed by INSERT)
+  -- suffers from race conditions under default Read Committed isolation: concurrent calls
+  -- can both observe zero overlaps and commit duplicate bookings. Serializable isolation
+  -- avoids this but triggers transaction aborts and expensive retry storms.
+  -- A GiST exclusion constraint with btree_gist enforces non-overlapping intervals natively
+  -- at index write time in the PostgreSQL storage engine, guaranteeing absolute zero double-bookings
+  -- with zero distributed locking overhead.
   CONSTRAINT appointments_no_doctor_overlap
     EXCLUDE USING gist (doctor_id WITH =, time_span WITH &&) WHERE (status = 'booked')
 );

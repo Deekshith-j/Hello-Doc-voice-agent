@@ -1,3 +1,5 @@
+// WHAT: Root layout shell containing the dashboard topbar, navigation sidebar, and synthetic data disclaimer.
+// WHY: Enforces a unified layout frame and persistent synthetic-data warning banner across all operator views.
 import type { ReactNode } from "react";
 
 import { getRetellConfig } from "@/config/environment";

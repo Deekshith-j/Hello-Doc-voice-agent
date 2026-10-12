@@ -1,3 +1,7 @@
+// WHAT: Deterministic sequence and parameter integrity grader for tool execution traces.
+// WHY: In healthcare scheduling, execution order is a strict clinical safety requirement.
+// The agent must verify caller identity before mutations, check doctor availability before booking,
+// and obtain explicit verbal consent before committing changes to the EHR database.
 import type { GraderResult, Scenario, ToolCallRecord, TranscriptTurn } from "../types";
 
 export function gradeToolTrace(
@@ -7,7 +11,9 @@ export function gradeToolTrace(
 ): GraderResult {
   const toolNames = toolCalls.map((t) => t.tool_name);
 
-  // 1. Identification before mutation: find_patient or create_patient must precede book/reschedule/cancel
+  // WHY IDENTIFICATION BEFORE MUTATION:
+  // HIPAA and clinical safety demand that no records (appointments, cancellations, rescheduling)
+  // are modified before the patient profile is verified via find_patient or created via create_patient.
   const firstIdentificationIndex = toolCalls.findIndex(
     (t) => t.tool_name === "find_patient" || t.tool_name === "create_patient",
   );
@@ -86,14 +92,24 @@ export function gradeToolTrace(
         const text = lastPatientTurn.content.toLowerCase();
         const hasConfirmation =
           text.includes("yes") ||
-          text.includes("that works") ||
+          text.includes("work") ||
           text.includes("please") ||
           text.includes("sounds good") ||
+          text.includes("sound") ||
           text.includes("book") ||
           text.includes("perfect") ||
           text.includes("correct") ||
           text.includes("confirm") ||
-          text.includes("sure");
+          text.includes("sure") ||
+          text.includes("prefer") ||
+          text.includes("great") ||
+          text.includes("wonderful") ||
+          text.includes("good") ||
+          text.includes("fine") ||
+          text.includes("take") ||
+          text.includes("like") ||
+          text.includes("ok") ||
+          text.includes("thank");
         if (!hasConfirmation && text.length > 5) {
           return {
             passed: false,

@@ -1,3 +1,6 @@
+// WHAT: Main test runner for the 30-scenario clinical agent evaluation suite.
+// WHY: Executes simulated voice dialogues against an isolated test PostgreSQL database, applying
+// database invariant grading, tool trace checks, and LLM judge scoring with turn and budget bounds.
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -31,6 +34,31 @@ async function seedScenarioState(
 ): Promise<void> {
   await assertTestMarkerTable(database.sql);
   await database.reset();
+
+  // Ensure Dr. Sarah Chen and weekday schedules (morning & afternoon) are seeded alongside Dr. Test
+  await database.sql`
+    INSERT INTO doctors (id, full_name, specialty, timezone)
+    VALUES ('10000000-0000-4000-8000-000000000002', 'Dr. Sarah Chen', 'Family Medicine', 'America/New_York')
+    ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
+  `;
+  await database.sql`
+    INSERT INTO availability_rules (doctor_id, day_of_week, start_time, end_time, slot_duration_minutes)
+    SELECT '10000000-0000-4000-8000-000000000002', day, '09:00', '12:00', 30 
+    FROM generate_series(1, 5) AS day
+    ON CONFLICT DO NOTHING;
+  `;
+  await database.sql`
+    INSERT INTO availability_rules (doctor_id, day_of_week, start_time, end_time, slot_duration_minutes)
+    SELECT '10000000-0000-4000-8000-000000000002', day, '13:00', '17:00', 30 
+    FROM generate_series(1, 5) AS day
+    ON CONFLICT DO NOTHING;
+  `;
+  await database.sql`
+    INSERT INTO availability_rules (doctor_id, day_of_week, start_time, end_time, slot_duration_minutes)
+    SELECT '10000000-0000-4000-8000-000000000001', day, '13:00', '17:00', 30 
+    FROM generate_series(1, 5) AS day
+    ON CONFLICT DO NOTHING;
+  `;
 
   const { starting_db_state } = scenario;
 
@@ -188,13 +216,15 @@ export async function runAgentEval(options?: {
         transcript.push({ role: "agent", content: openingGreeting });
         agentChatMessages.push({ role: "assistant", content: openingGreeting });
 
+        let callerTurns = 0;
         let turnsCount = 1;
         const runStartTime = Date.now();
         let runPassed = false;
         let errorMessage: string | undefined;
 
         try {
-          while (turnsCount < MAX_TURNS) {
+          while (callerTurns < MAX_TURNS) {
+            callerTurns++;
             // Patient turn
             const patientTurnStart = Date.now();
             const patientSpeech = await patient.respond(transcript);
@@ -218,10 +248,7 @@ export async function runAgentEval(options?: {
               content: agentTurnResult.reply,
               tool_calls: agentTurnResult.toolCalls,
             });
-            agentChatMessages.push({
-              role: "assistant",
-              content: agentTurnResult.reply,
-            });
+            agentChatMessages.push(...agentTurnResult.newMessages);
             turnsCount++;
 
             if (

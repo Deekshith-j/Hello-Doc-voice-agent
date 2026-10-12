@@ -1,3 +1,7 @@
+// WHAT: LLM-as-a-judge evaluator scoring conversational safety, voice style, and prompt adherence.
+// WHY: Static code assertions verify database mutations and tool ordering, but cannot evaluate conversational
+// nuances: e.g. emergency escalation, medical advice refusal, conversational tone, and prompt injection resistance.
+// An independent, stronger model evaluates transcripts against a strict clinical voice rubric.
 import { getLlmClient } from "../llm-client";
 import type { GraderResult, Scenario, TranscriptTurn } from "../types";
 

@@ -1,4 +1,7 @@
-﻿import { PageContainer } from "@/components/page-header";
+// WHAT: Suspense fallback skeleton loader for dashboard routes.
+// WHY: Prevents jarring layout shifts while server components stream data from PostgreSQL,
+// giving clinical operators a polished, responsive user experience.
+import { PageContainer } from "@/components/page-header";
 
 export default function DashboardLoading() {
   return (

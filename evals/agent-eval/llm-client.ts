@@ -1,3 +1,6 @@
+// WHAT: Multi-provider LLM API client supporting Gemini and OpenAI-compatible endpoints with token cost tracking.
+// WHY: Enforces hard cost caps ($2.00 cap per eval run), rate-limit backoff, and vendor-agnostic chat completions
+// for the agent, patient simulator, and judge models.
 import process from "node:process";
 
 try {
@@ -29,7 +32,9 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
   "gemini-2.5-flash": { promptCostPerMillion: 0.075, completionCostPerMillion: 0.3 },
   "gemini-3.5-flash": { promptCostPerMillion: 0.15, completionCostPerMillion: 0.6 },
   "gemini-3.5-flash-lite": { promptCostPerMillion: 0.05, completionCostPerMillion: 0.2 },
+  "gemini-3.1-flash-lite": { promptCostPerMillion: 0.05, completionCostPerMillion: 0.2 },
   "gemini-flash-latest": { promptCostPerMillion: 0.075, completionCostPerMillion: 0.3 },
+  "gemini-flash-lite-latest": { promptCostPerMillion: 0.05, completionCostPerMillion: 0.2 },
 };
 
 export interface ChatMessage {

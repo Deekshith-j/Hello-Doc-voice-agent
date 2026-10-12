@@ -1,3 +1,6 @@
+// WHAT: Centralized environment variable parser and validator using Zod.
+// WHY: Ensures fail-fast type validation for database connections, Retell credentials, and clinic defaults,
+// preventing silent runtime configuration failures across server and client boundaries.
 import { z } from "zod";
 
 const envSchema = z.object({

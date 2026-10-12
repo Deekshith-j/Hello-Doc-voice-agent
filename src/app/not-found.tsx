@@ -1,4 +1,6 @@
-// Renders when a requested URL or resource does not exist.
+// WHAT: Global 404 page handler rendered when a URL or dashboard resource does not exist.
+// WHY: Provides a clear, branded fallback directing clinic operators back to the main overview
+// rather than exposing unhandled Next.js error screens.
 import Link from "next/link";
 
 import { DoctoLogo } from "@/components/docto-logo";

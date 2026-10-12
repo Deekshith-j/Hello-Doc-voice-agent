@@ -1,5 +1,7 @@
-// Provides one hardened HTTP adapter for every Retell custom-function route.
-// Signature checks, rate limits, validation, call logging, and errors stay identical across tools.
+// WHAT: Shared HTTP route adapter for Retell custom-function tool invocations.
+// WHY: Telephony webhooks face public exposure, rapid LLM retry loops, and sensitive healthcare data.
+// Centralizing HMAC verification, per-call rate limiting, audit logging, and error redaction ensures
+// uniform defense-in-depth across all scheduling tools.
 import { randomUUID } from "node:crypto";
 
 import { after } from "next/server";
@@ -52,6 +54,12 @@ export function createToolRoute<TSchema extends z.ZodType>(
     try {
       const runtime = runtimeProvider();
       const rawBody = await request.text();
+
+      // WHY HMAC SIGNATURE VERIFICATION:
+      // Public Next.js API routes are accessible to any HTTP client.
+      // Validating Retell's HMAC-SHA256 signature ensures requests originate exclusively
+      // from Retell's telephony engine, preventing unauthorized external callers from forging
+      // tool executions or scraping patient records.
       const authFailure = retellAuthFailure(
         authenticateRetellRequest(
           rawBody,
@@ -127,6 +135,12 @@ export function createToolRoute<TSchema extends z.ZodType>(
   };
 }
 
+// WHY PER-CALL RATE LIMITING:
+// Inbound Retell webhooks egress from shared Retell proxy/server IP clusters.
+// Rate limiting by client IP (`x-forwarded-for`) would inadvertently throttle unrelated patients
+// whose concurrent voice calls happen to route through the same Retell egress node.
+// Keying by `${tool.name}:call:${callId}` isolates rate limits to the specific caller session,
+// preventing runaway LLM tool loops without collateral impact on other active calls.
 async function runTool<TSchema extends z.ZodType>(
   tool: ToolDefinition<TSchema>,
   runtime: RouteRuntime,
@@ -134,7 +148,6 @@ async function runTool<TSchema extends z.ZodType>(
   args: unknown,
   callId: string | null,
 ): Promise<ToolResponse> {
-  // Retell calls come from shared infrastructure, so the limit follows the call, not the IP.
   const limitKey = callId
     ? `${tool.name}:call:${callId}`
     : `${tool.name}:ip:${parseClientAddress(request.headers.get("x-forwarded-for"))}`;
@@ -256,7 +269,12 @@ function handleRouteError(
       requestId,
     );
   }
-  // Driver messages can echo row values, so only the error class and SQLSTATE are logged.
+  // WHY ERROR REDACTION & PHI PROTECTION:
+  // PostgreSQL driver exceptions (such as unique constraint or check constraint failures)
+  // often echo raw query parameters, table columns, or conflicting values (e.g. patient phone or DOB).
+  // Directly bubbling database error strings into logs or HTTP response bodies would leak
+  // Protected Health Information (PHI) to application log aggregators or Retell voice agent LLM context.
+  // We strictly isolate telemetry to the error class and SQLSTATE, returning a generic, speakable message.
   logToolCall(toolName, requestId, startedAt, "failed", "internal_error", {
     error: error instanceof Error ? error.name : "unknown",
     sqlstate: getPostgresErrorCode(error),

@@ -1,3 +1,6 @@
+// WHAT: Type definitions for the agent evaluation framework.
+// WHY: Enforces strict data contracts across scenario declarations, tool execution traces,
+// simulated patient turns, LLM completions, and multi-grader evaluation outputs.
 export type ScenarioCategory =
   | "book_existing_patient"
   | "register_new_patient_then_book"

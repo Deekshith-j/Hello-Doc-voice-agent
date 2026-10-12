@@ -1,3 +1,6 @@
+// WHAT: Core application service executing clinical scheduling tools for the voice assistant.
+// WHY: Coordinates repository transactions, external calendar synchronization, slot availability checks,
+// and defensive caller verification, isolating business rules from telephony and transport protocols.
 import { createHash } from "node:crypto";
 
 import type { TimeInterval } from "@/domain/availability";
@@ -141,6 +144,17 @@ export class AppointmentToolService {
     );
   }
 
+  // WHY CREATE_PATIENT FLOW & FRONT DESK FALLBACK:
+  // 1. Deterministic UUID: Derived from the idempotency key so repeat invocations from Retell replay cleanly.
+  // 2. Name & DOB Pre-Check: If a patient record already exists with this name and DOB:
+  //    - If the ID matches, this is an idempotent retry -> safely return success.
+  //    - If the ID differs, the caller is attempting to register someone who already exists or has an ambiguous record.
+  //      The automated voice agent cannot resolve complex identity or record-merging issues by phone without risking
+  //      HIPAA/PHI mix-ups. It intentionally refuses and directs the caller to the human front desk.
+  // 3. Phone Pre-Check: The phone number carries a unique DB index. If another record owns this phone,
+  //    registering a new profile would either corrupt contact info or fail at the DB level. Defensive refusal protects integrity.
+  // 4. DB 23505 Catch: Handles race conditions where two identical requests arrive concurrently. If the inserted row matches
+  //    the deterministic patient ID, it returns success; otherwise it falls back to the front desk.
   async createPatient(input: CreatePatientInput): Promise<ToolResponse> {
     const patientId = deterministicUuid(input.idempotency_key);
 

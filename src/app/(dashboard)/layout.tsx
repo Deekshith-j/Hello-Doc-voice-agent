@@ -1,5 +1,5 @@
-// Wraps every operator page in the clinic workspace after confirming the visitor is signed in.
-// Pages re-check the session themselves too, because layouts do not re-render on client navigation.
+// Wraps every operator page in the clinic dashboard with the shared navigation shell.
+// Dynamic rendering ensures appointment lists and live call statuses are always fresh.
 import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/app-shell";

@@ -1,4 +1,6 @@
-// Displays full audit trail for a single call: timing, disconnection reason, tools, and transcript.
+// WHAT: Call detail view rendering transcript turns, tool executions, and latency metrics.
+// WHY: Gives clinic supervisors complete auditability into AI scheduling interactions,
+// verifying caller intent, tool decisions, and disconnection reasons for quality assurance.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
