@@ -81,6 +81,10 @@ export interface ClinicRepository {
     fullName: string,
     dateOfBirth: string,
   ): Promise<PatientRecord | null>;
+  findPatientsByNameAndDob(
+    fullName: string,
+    dateOfBirth: string,
+  ): Promise<PatientRecord[]>;
   listAppointmentsNeedingCalendarSync(
     minimumAgeSeconds: number,
     limit: number,

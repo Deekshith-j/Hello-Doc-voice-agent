@@ -144,18 +144,20 @@ export class AppointmentToolService {
   async createPatient(input: CreatePatientInput): Promise<ToolResponse> {
     const patientId = deterministicUuid(input.idempotency_key);
 
-    const existingByNameAndDob = await this.repository.findVerifiedPatient(
-      input.full_name,
-      input.date_of_birth,
-    );
-    if (existingByNameAndDob) {
-      if (existingByNameAndDob.id === patientId) {
+    const existingByNameAndDob =
+      await this.repository.findPatientsByNameAndDob(
+        input.full_name,
+        input.date_of_birth,
+      );
+    if (existingByNameAndDob.length > 0) {
+      const match = existingByNameAndDob.find((p) => p.id === patientId);
+      if (match) {
         return toolSuccess(
           "patient_created",
           "I've created your patient record. Let's continue with scheduling your appointment.",
           {
             patient_id: patientId,
-            patient_name: existingByNameAndDob.fullName,
+            patient_name: match.fullName,
           },
         );
       }

@@ -95,6 +95,19 @@ export class PostgresClinicRepository
     return rows.length === 1 ? (rows[0] ?? null) : null;
   }
 
+  async findPatientsByNameAndDob(
+    fullName: string,
+    dateOfBirth: string,
+  ): Promise<PatientRecord[]> {
+    const trimmed = fullName.trim();
+    return this.sql<PatientRecord[]>`
+      SELECT id, full_name AS "fullName"
+      FROM patients
+      WHERE lower(trim(full_name)) = lower(${trimmed}) AND date_of_birth = ${dateOfBirth}::date
+      LIMIT 2
+    `;
+  }
+
   async findPatient(patientId: string): Promise<PatientRecord | null> {
     // Booking only needs existence and display name; DOB and phone stay out of later tool responses.
     const rows = await this.sql<PatientRecord[]>`
