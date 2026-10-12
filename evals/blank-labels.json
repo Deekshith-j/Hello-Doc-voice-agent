@@ -1,0 +1,407 @@
+[
+  {
+    "id": "label-sample-1-book-exist-01",
+    "category": "book_existing_patient",
+    "scenario": {
+      "category": "book_existing_patient",
+      "persona": "Polite elderly patient, speaks slowly, clearly confirms all details.",
+      "goal": "Book an appointment with Dr. Sarah Chen next Tuesday morning.",
+      "caller_info": {
+        "stated_name": "Eleanor Vance",
+        "spelled_name": "E-L-E-A-N-O-R V-A-N-C-E",
+        "stated_dob": "1952-04-12",
+        "stated_phone": "+15552345678"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Eleanor Vance, Book an appointment with Dr. Sarah Chen next Tuesday morning."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-2-book-exist-02",
+    "category": "book_existing_patient",
+    "scenario": {
+      "category": "book_existing_patient",
+      "persona": "Busy professional on lunch break, wants the earliest general consultation slot next week.",
+      "goal": "Verify identity and book the first available slot next Wednesday.",
+      "caller_info": {
+        "stated_name": "Marcus Brody",
+        "spelled_name": "M-A-R-C-U-S B-R-O-D-Y",
+        "stated_dob": "1980-09-24",
+        "stated_phone": "+15553456789"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Marcus Brody, Verify identity and book the first available slot next Wednesday."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-3-reg-new-01",
+    "category": "register_new_patient_then_book",
+    "scenario": {
+      "category": "register_new_patient_then_book",
+      "persona": "New resident recently moved to town, friendly and cooperative.",
+      "goal": "State they are a new patient, provide name, DOB, phone, confirm with yes, and book next Thursday.",
+      "caller_info": {
+        "stated_name": "Claire Redfield",
+        "spelled_name": "C-L-A-I-R-E R-E-D-F-I-E-L-D",
+        "stated_dob": "1994-06-15",
+        "stated_phone": "+15554567890"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Claire Redfield, State they are a new patient, provide name, DOB, phone, confirm with yes, and book next Thursday."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-4-reg-new-02",
+    "category": "register_new_patient_then_book",
+    "scenario": {
+      "category": "register_new_patient_then_book",
+      "persona": "College student needing an annual checkup, patient and clear.",
+      "goal": "Register as a brand new patient and book an afternoon slot next Friday.",
+      "caller_info": {
+        "stated_name": "Liam Gallagher",
+        "spelled_name": "L-I-A-M G-A-L-L-A-G-H-E-R",
+        "stated_dob": "2002-11-03",
+        "stated_phone": "+15555678901"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Liam Gallagher, Register as a brand new patient and book an afternoon slot next Friday."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-5-resched-01",
+    "category": "reschedule",
+    "scenario": {
+      "category": "reschedule",
+      "persona": "Existing patient whose work schedule shifted, wants to move Tuesday visit to Thursday.",
+      "goal": "Look up existing appointment and move it to Thursday afternoon.",
+      "caller_info": {
+        "stated_name": "Arthur Pendelton",
+        "spelled_name": "A-R-T-H-U-R P-E-N-D-E-L-T-O-N",
+        "stated_dob": "1975-03-30",
+        "stated_phone": "+15556789012"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Arthur Pendelton, Look up existing appointment and move it to Thursday afternoon."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-6-resched-02",
+    "category": "reschedule",
+    "scenario": {
+      "category": "reschedule",
+      "persona": "Existing patient with a busy calendar, needs morning slot instead of evening.",
+      "goal": "Verify self, list appointments, reschedule the upcoming appointment to a morning slot next week.",
+      "caller_info": {
+        "stated_name": "Grace Hopper",
+        "spelled_name": "G-R-A-C-E H-O-P-P-E-R",
+        "stated_dob": "1960-12-09",
+        "stated_phone": "+15557890123"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Grace Hopper, Verify self, list appointments, reschedule the upcoming appointment to a morning slot next week."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-7-cancel-01",
+    "category": "cancel",
+    "scenario": {
+      "category": "cancel",
+      "persona": "Existing patient feeling better, wants to cancel upcoming appointment.",
+      "goal": "Verify identity, confirm the specific appointment, explicitly confirm cancellation, and say goodbye.",
+      "caller_info": {
+        "stated_name": "Diana Prince",
+        "spelled_name": "D-I-A-N-A P-R-I-N-C-E",
+        "stated_dob": "1985-05-18",
+        "stated_phone": "+15558901234"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Diana Prince, Verify identity, confirm the specific appointment, explicitly confirm cancellation, and say goodbye."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-8-cancel-02",
+    "category": "cancel",
+    "scenario": {
+      "category": "cancel",
+      "persona": "Patient traveling out of town next week, needs to cancel visit.",
+      "goal": "Verify identity, request cancellation, confirm explicitly when prompted.",
+      "caller_info": {
+        "stated_name": "Bruce Banner",
+        "spelled_name": "B-R-U-C-E B-A-N-N-E-R",
+        "stated_dob": "1972-12-18",
+        "stated_phone": "+15559012345"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Bruce Banner, Verify identity, request cancellation, confirm explicitly when prompted."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-9-vague-dates-01",
+    "category": "vague_dates",
+    "scenario": {
+      "category": "vague_dates",
+      "persona": "Caller says 'sometime next week or maybe in a few days'.",
+      "goal": "Clarify timeframe when the agent asks, narrow down to Tuesday afternoon, and book.",
+      "caller_info": {
+        "stated_name": "Peter Parker",
+        "spelled_name": "P-E-T-E-R P-A-R-K-E-R",
+        "stated_dob": "1998-08-10",
+        "stated_phone": "+15550123456"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Peter Parker, Clarify timeframe when the agent asks, narrow down to Tuesday afternoon, and book."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-10-vague-dates-02",
+    "category": "vague_dates",
+    "scenario": {
+      "category": "vague_dates",
+      "persona": "Caller asks for 'anytime before the weekend'.",
+      "goal": "Work with the agent's offered slots to pick Wednesday morning and confirm.",
+      "caller_info": {
+        "stated_name": "Natasha Romanoff",
+        "spelled_name": "N-A-T-A-S-H-A R-O-M-A-N-O-F-F",
+        "stated_dob": "1984-11-22",
+        "stated_phone": "+15551234567"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Natasha Romanoff, Work with the agent's offered slots to pick Wednesday morning and confirm."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-11-no-avail-01",
+    "category": "no_availability",
+    "scenario": {
+      "category": "no_availability",
+      "persona": "Caller wants Dr. Marcus Vance exclusively on a specific blocked day.",
+      "goal": "Agent checks availability, finds none, offers alternatives; caller politely declines and ends call.",
+      "caller_info": {
+        "stated_name": "Stephen Strange",
+        "spelled_name": "S-T-E-P-H-E-N S-T-R-A-N-G-E",
+        "stated_dob": "1976-11-18",
+        "stated_phone": "+15552345679"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Stephen Strange, Agent checks availability, finds none, offers alternatives; caller politely declines and ends call."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-12-no-avail-02",
+    "category": "no_availability",
+    "scenario": {
+      "category": "no_availability",
+      "persona": "Caller wants a Sunday appointment when clinic is closed.",
+      "goal": "Agent checks or notes closure, offers weekday alternatives, caller decides to call back later.",
+      "caller_info": {
+        "stated_name": "Wanda Maximoff",
+        "spelled_name": "W-A-N-D-A M-A-X-I-M-O-F-F",
+        "stated_dob": "1989-02-10",
+        "stated_phone": "+15553456780"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Wanda Maximoff, Agent checks or notes closure, offers weekday alternatives, caller decides to call back later."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-13-change-mind-01",
+    "category": "caller_changes_mind",
+    "scenario": {
+      "category": "caller_changes_mind",
+      "persona": "Indecisive caller who first asks for Tuesday morning, then changes mind to Thursday afternoon.",
+      "goal": "Change preference mid-stream, verify the agent offers new slots, confirm Thursday, and book.",
+      "caller_info": {
+        "stated_name": "Tony Stark",
+        "spelled_name": "T-O-N-Y S-T-A-R-K",
+        "stated_dob": "1970-05-29",
+        "stated_phone": "+15554567891"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Tony Stark, Change preference mid-stream, verify the agent offers new slots, confirm Thursday, and book."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-14-change-mind-02",
+    "category": "caller_changes_mind",
+    "scenario": {
+      "category": "caller_changes_mind",
+      "persona": "Caller initially wants Dr. Chen, but decides Dr. Vance is fine when told Chen is booked up.",
+      "goal": "Switch doctor preference and book with Dr. Vance.",
+      "caller_info": {
+        "stated_name": "Carol Danvers",
+        "spelled_name": "C-A-R-O-L D-A-N-V-E-R-S",
+        "stated_dob": "1982-04-24",
+        "stated_phone": "+15555678902"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Carol Danvers, Switch doctor preference and book with Dr. Vance."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  },
+  {
+    "id": "label-sample-15-taken-slot-01",
+    "category": "taken_slot",
+    "scenario": {
+      "category": "taken_slot",
+      "persona": "Caller picks a slot that is already taken by another patient.",
+      "goal": "Agent reports slot unavailable and offers adjacent slots, caller picks second option and confirms.",
+      "caller_info": {
+        "stated_name": "Steve Rogers",
+        "spelled_name": "S-T-E-V-E R-O-G-E-R-S",
+        "stated_dob": "1940-07-04",
+        "stated_phone": "+15556789013"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "content": "Thanks for calling Downtown Health Clinic. Are you a new patient or have you been here before?"
+      },
+      {
+        "role": "patient",
+        "content": "Hi, I am Steve Rogers, Agent reports slot unavailable and offers adjacent slots, caller picks second option and confirms."
+      }
+    ],
+    "human_label": null,
+    "human_notes": ""
+  }
+]
