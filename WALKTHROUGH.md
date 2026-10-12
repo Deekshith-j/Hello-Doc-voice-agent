@@ -67,8 +67,8 @@ This document traces the lifecycle of **ONE appointment booking** through every 
      - Extracts `callId = "call_8829410a7bc3"`.
    - **Per-Call Rate Limiting**: In `runTool()`:
      - Generates key: `"book_appointment:call:call_8829410a7bc3"`.
-     - Calls [`src/server/rate-limiter.ts:DatabaseRateLimiter.consumeRateLimit`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/server/rate-limiter.ts).
-     - Increments bucket in PostgreSQL. Limit is permitted (allowed = true).
+     - Calls [`src/server/rate-limiter.ts:consumeRateLimit`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/server/rate-limiter.ts) via `runtime.consumeRateLimit`.
+     - Increments bucket in PostgreSQL via `PostgresClinicRepository.incrementRateLimit`. Limit is permitted (allowed = true).
    - **Schema Validation**:
      - Evaluates input with [`src/application/tool-schemas.ts:bookAppointmentSchema.safeParse`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/tool-schemas.ts). Input passes.
 
@@ -90,14 +90,11 @@ This document traces the lifecycle of **ONE appointment booking** through every 
 3. **Workflow**:
    - Validates patient existence via `this.repository.findPatient("d8b242e8-...")`.
    - Validates doctor existence and active status via `this.repository.findDoctor("a0eebc99-...")`.
-   - Fetches live availability snapshot via `this.repository.loadAvailabilitySnapshot()`:
-     - Reads weekly operating rules from `availability_rules`.
-     - Reads approved leave from `time_off`.
-     - Reads existing booked appointments from `appointments`.
-   - Verifies slot availability via [`src/domain/get-free-slots.ts:getFreeSlots`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/domain/get-free-slots.ts):
-     - Calculates wall-clock local time in `"America/New_York"`.
-     - Discards nonexistent DST jump hours.
-     - Confirms requested window `[13:30, 14:00)` is completely free.
+   - Executes `this.dependencies.getSlots(doctor.id, dayStart, dayEnd, now)` (created via [`src/domain/availability-service.ts:createAvailabilityService`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/domain/availability-service.ts)):
+     - Loads live availability snapshot via `this.repository.loadAvailabilitySnapshot()`: reads rules, time-off, and existing booked appointments.
+     - Optionally queries live calendar busy intervals via `calendar.getBusyTimes()`.
+     - Invokes pure slot calculation engine [`src/domain/get-free-slots.ts:getFreeSlots`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/domain/get-free-slots.ts): anchors day in doctor's wall-clock timezone, drops invalid DST transition hours, and subtracts booked blocks.
+   - Verifies the requested slot `[13:30, 14:00)` is in the resulting free slots list.
 
 ---
 
@@ -131,7 +128,7 @@ This document traces the lifecycle of **ONE appointment booking** through every 
      ```sql
      EXCLUDE USING gist (doctor_id WITH =, time_span WITH &&) WHERE (status = 'booked')
      ```
-     PostgreSQL locks the corresponding leaf index page in the GiST tree. If another transaction booked an overlapping time for Dr. Chen in the microsecond before, PostgreSQL raises error code `23P01` (exclusion_violation), preventing double-booking.
+     The database checks for overlap during the insert, and a conflicting concurrent transaction waits for the first to commit or abort, then fails with 23P01 (exclusion_violation), preventing double-booking.
    - `appointments_idempotency_key_unique_idx`: Prevents duplicate inserts if Retell retried this request.
 5. **Outcome**: The row is inserted into `appointments` with ID `e5f1b892-482a-41cb-9184-e9e92fa08210`.
 
@@ -147,8 +144,8 @@ This document traces the lifecycle of **ONE appointment booking** through every 
        await runtime.service.retryCalendarSync(appointmentId);
      });
      ```
-   - Invokes [`src/application/calendar-sync.ts:CalendarSync.syncAppointment`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/calendar-sync.ts).
-   - Calls Google Calendar API to insert event. On success, updates `calendar_sync_status = 'synced'`.
+   - `runtime.service.retryCalendarSync(appointmentId)` retrieves the newly committed appointment record and invokes [`src/application/calendar-sync.ts:CalendarSync.sync(appointment)`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/calendar-sync.ts).
+   - Calls Google Calendar API (`AvailabilitySource.write`) to insert the calendar event. On success, updates `calendar_sync_status = 'synced'`.
 
 ---
 

@@ -15,7 +15,7 @@ If someone removes the PostgreSQL GiST exclusion constraint and relies on applic
 
 ### 2. Database Constraints: How does the PostgreSQL GiST Exclusion Constraint work, and why is `btree_gist` required?
 **Short Answer**:
-An exclusion constraint (`EXCLUDE USING gist (doctor_id WITH =, time_span WITH &&) WHERE (status = 'booked')`) enforces interval non-overlap natively in the storage engine. `btree_gist` is required because standard GiST indexes only index geometric or range types; `btree_gist` allows standard scalar types (like `uuid` for `doctor_id`) to be indexed alongside `tstzrange` in a single unified index scan.
+An exclusion constraint (`EXCLUDE USING gist (doctor_id WITH =, time_span WITH &&) WHERE (status = 'booked')`) enforces interval non-overlap natively in the storage engine. The database checks for overlap during the insert, and a conflicting concurrent transaction waits for the first to commit or abort, then fails with 23P01. `btree_gist` is required because standard GiST indexes only index geometric or range types; `btree_gist` allows standard scalar types (like `uuid` for `doctor_id`) to be indexed alongside `tstzrange` in a single unified index scan.
 
 **How it can fail**:
 If an engineer attempts to run migrations without superuser/extension privileges to execute `CREATE EXTENSION IF NOT EXISTS btree_gist;`, the migration immediately fails. Also, partial indexes only enforce non-overlap across rows matching `WHERE (status = 'booked')`; if an appointment is incorrectly soft-deleted or updated to another status, its range is freed.
@@ -76,12 +76,12 @@ If application code runs schema migrations or uses prepared statements with sess
 
 ---
 
-### 9. Privacy & PHI: How does the system prevent Protected Health Information (PHI) leaks in error handling and logs?
+### 9. Row Level Security (RLS): Why does the codebase enforce authorization in application SQL queries rather than PostgreSQL RLS policies?
 **Short Answer**:
-PostgreSQL driver errors frequently interpolate query values (e.g. `duplicate key value violates unique constraint "patients_phone_unique_idx" (phone_e164)=(+15551234567)`). In `src/server/tool-route.ts:handleRouteError`, raw driver messages are strictly intercepted. We log only the error class and PostgreSQL SQLSTATE (`23505`), redacting argument dictionaries (`full_name`, `phone`, `date_of_birth` -> `[REDACTED]`), and return a generic, speakable error message to the LLM.
+In voice telephony, incoming requests authenticate server-to-server via Retell HMAC signatures rather than user-session JWTs. Enforcing PostgreSQL Row Level Security (RLS) would require executing `SET LOCAL app.current_patient_id = ...` on every transaction. Because serverless Next.js functions connect through PgBouncer in transaction pooling mode (`DATABASE_URL`), session-level state and configuration variables can bleed between pooled connections or reset unpredictably. Instead, repository queries explicitly parameterize and enforce patient ownership in SQL (`WHERE id = ${id} AND patient_id = ${patientId}`), while `handleRouteError` redacts driver error messages to prevent PHI leakage.
 
 **How it can fail**:
-If an unhandled exception thrown in domain code bypasses `handleRouteError` and gets logged via default console loggers or Next.js development error overlays, patient DOBs and names could leak to unencrypted cloud log drains (e.g. Datadog, Vercel logs).
+If an engineer adds a new repository method that queries appointments by ID alone (`WHERE id = ${id}`) without joining or checking `patient_id`, an attacker guessing a UUID could inspect or cancel another patient's appointment. Defense-in-depth requires strict query review and schema-level tenant isolation in multi-tenant deployments.
 
 ---
 

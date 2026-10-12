@@ -206,8 +206,8 @@ export const appointments = pgTable(
     // Drizzle ORM does not support a native TypeScript builder for PostgreSQL EXCLUDE USING gist constraints.
     // The critical exclusion constraint:
     //   EXCLUDE USING gist (doctor_id WITH =, time_span WITH &&) WHERE (status = 'booked')
-    // is enforced directly in `drizzle/0000_initial.sql`. It prevents double-booking at the storage engine
-    // level, eliminating race conditions under Read Committed isolation without application-level distributed locks.
+    // is enforced directly in `drizzle/0000_initial.sql`. The database checks for overlap during the insert,
+    // and a conflicting concurrent transaction waits for the first to commit or abort, then fails with 23P01.
   ],
 );
 

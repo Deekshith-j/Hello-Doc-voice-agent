@@ -1,5 +1,6 @@
-// Starts a browser web call and returns a short-lived access token.
-// The Retell API key never leaves the server; only the per-call token reaches the browser.
+// WHAT: Web call session initiator issuing ephemeral access tokens for browser demo calls.
+// WHY: Authenticates browser sessions against Retell AI (/v2/create-web-call) without exposing
+// the master Retell API key to client browsers, enforcing per-IP and global daily demo rate limits.
 import {
   areWebCallsEnabled,
   getClinicSettings,
@@ -11,19 +12,57 @@ import { getToolRuntime } from "@/server/tool-runtime";
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+interface CallContext {
+  hasAgentId: boolean;
+  hasApiKey: boolean;
+}
+
 export async function POST(request: Request): Promise<Response> {
   const config = getRetellConfig();
-  const hasApiKey = Boolean(config?.apiKey);
-  const hasAgentId = Boolean(config?.agentId);
+  const context: CallContext = {
+    hasApiKey: Boolean(config?.apiKey),
+    hasAgentId: Boolean(config?.agentId),
+  };
 
+  const configErrorResponse = validateWebCallConfig(config, context);
+  if (configErrorResponse) return configErrorResponse;
+
+  const clientIp = getClientIp(request);
+  const now = new Date();
+  const runtime = getToolRuntime();
+
+  const ipRateLimitResponse = await checkIpRateLimit(
+    runtime,
+    clientIp,
+    now,
+    context,
+  );
+  if (ipRateLimitResponse) return ipRateLimitResponse;
+
+  const globalRateLimitResponse = await checkGlobalRateLimit(
+    runtime,
+    now,
+    context,
+  );
+  if (globalRateLimitResponse) return globalRateLimitResponse;
+
+  return createWebCallSession(
+    { apiKey: config!.apiKey, agentId: config!.agentId! },
+    context,
+  );
+}
+
+function validateWebCallConfig(
+  config: ReturnType<typeof getRetellConfig>,
+  context: CallContext,
+): Response | null {
   if (!areWebCallsEnabled()) {
     console.warn(
       JSON.stringify({
         event: "web_call_attempt",
         status: 503,
         reason: "web_calls_disabled",
-        hasApiKey,
-        hasAgentId,
+        ...context,
       }),
     );
     return Response.json(
@@ -42,7 +81,7 @@ export async function POST(request: Request): Promise<Response> {
         event: "web_call_attempt",
         status: 503,
         reason: "retell_not_configured",
-        hasApiKey,
+        hasApiKey: context.hasApiKey,
         hasAgentId: false,
       }),
     );
@@ -56,27 +95,34 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  return null;
+}
+
+function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   const firstIp = forwarded?.split(",")[0]?.trim();
-  const clientIp = firstIp || request.headers.get("x-real-ip") || "127.0.0.1";
+  return firstIp || request.headers.get("x-real-ip") || "127.0.0.1";
+}
 
-  const now = new Date();
-  const runtime = getToolRuntime();
-
-  // 1. IP rate limit: max 5 calls per IP per hour
+async function checkIpRateLimit(
+  runtime: ReturnType<typeof getToolRuntime>,
+  clientIp: string,
+  now: Date,
+  context: CallContext,
+): Promise<Response | null> {
   const ipLimit = await runtime.consumeRateLimit(
     `web_call:ip:${clientIp}`,
     now,
     { maxRequests: 5, windowMs: ONE_HOUR_MS },
   );
+
   if (!ipLimit.allowed) {
     console.warn(
       JSON.stringify({
         event: "web_call_rate_limited",
         limitType: "ip",
         status: 429,
-        hasApiKey,
-        hasAgentId,
+        ...context,
       }),
     );
     return Response.json(
@@ -93,20 +139,27 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // 2. Global rate limit: max 30 calls per day overall
+  return null;
+}
+
+async function checkGlobalRateLimit(
+  runtime: ReturnType<typeof getToolRuntime>,
+  now: Date,
+  context: CallContext,
+): Promise<Response | null> {
   const globalLimit = await runtime.consumeRateLimit(
     "web_call:global",
     now,
     { maxRequests: 30, windowMs: ONE_DAY_MS },
   );
+
   if (!globalLimit.allowed) {
     console.warn(
       JSON.stringify({
         event: "web_call_rate_limited",
         limitType: "global",
         status: 429,
-        hasApiKey,
-        hasAgentId,
+        ...context,
       }),
     );
     return Response.json(
@@ -123,6 +176,13 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  return null;
+}
+
+async function createWebCallSession(
+  config: { agentId: string; apiKey: string },
+  context: CallContext,
+): Promise<Response> {
   try {
     const clinicSettings = getClinicSettings();
     const session = await new RetellApi(config.apiKey).createWebCall(
@@ -146,8 +206,7 @@ export async function POST(request: Request): Promise<Response> {
         status: 200,
         callId: session.callId,
         transport: session.transport,
-        hasApiKey,
-        hasAgentId,
+        ...context,
       }),
     );
     return Response.json({
@@ -164,8 +223,7 @@ export async function POST(request: Request): Promise<Response> {
         event: "web_call",
         outcome: "failed",
         status: error instanceof RetellApiError ? error.status : 502,
-        hasApiKey,
-        hasAgentId,
+        ...context,
         error: error instanceof Error ? error.name : "unknown",
         errorMessage: error instanceof Error ? error.message : "unknown",
       }),
