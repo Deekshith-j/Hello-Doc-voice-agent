@@ -30,7 +30,7 @@ export interface ScenarioFixtureData {
     doctor_name?: string;
     start_at: string;
     end_at: string;
-    status: "confirmed" | "cancelled";
+    status: "booked" | "cancelled";
   };
   block_doctor_schedule?: boolean;
 }

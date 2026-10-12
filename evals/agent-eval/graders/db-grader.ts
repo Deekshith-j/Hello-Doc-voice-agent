@@ -27,20 +27,20 @@ export async function gradeDbState(
     SELECT a1.id 
     FROM appointments a1
     JOIN appointments a2 ON a1.doctor_id = a2.doctor_id AND a1.id <> a2.id
-    WHERE a1.status = 'confirmed' AND a2.status = 'confirmed'
-      AND a1.start_at < a2.end_at AND a1.end_at > a2.start_at
+    WHERE a1.status = 'booked' AND a2.status = 'booked'
+      AND a1.time_span && a2.time_span
   `;
   if (overlaps.length > 0) {
     return {
       passed: false,
-      reason: "Database invariant failed: Overlapping confirmed appointments found for doctor.",
+      reason: "Database invariant failed: Overlapping booked appointments found for doctor.",
     };
   }
 
   // 3. Check nothing was booked in the past
   const pastAppointments = await sql<{ id: string }[]>`
     SELECT id FROM appointments 
-    WHERE status = 'confirmed' AND start_at < now() - interval '1 minute'
+    WHERE status = 'booked' AND lower(time_span) < now() - interval '1 minute'
   `;
   if (pastAppointments.length > 0) {
     return {
@@ -72,7 +72,7 @@ export async function gradeDbState(
         SELECT count(*)::int as count 
         FROM appointments a
         JOIN patients p ON a.patient_id = p.id
-        WHERE p.phone_e164 = ${callerPhone} AND a.status = 'confirmed'
+        WHERE p.phone_e164 = ${callerPhone} AND a.status = 'booked'
       `;
       appointmentCount = rows[0]?.count ?? 0;
     } else {
@@ -80,7 +80,7 @@ export async function gradeDbState(
         SELECT count(*)::int as count 
         FROM appointments a
         JOIN patients p ON a.patient_id = p.id
-        WHERE p.full_name = ${scenario.caller_info.stated_name} AND a.status = 'confirmed'
+        WHERE p.full_name = ${scenario.caller_info.stated_name} AND a.status = 'booked'
       `;
       appointmentCount = rows[0]?.count ?? 0;
     }
@@ -88,7 +88,7 @@ export async function gradeDbState(
     if (appointmentCount === 0) {
       return {
         passed: false,
-        reason: "Expected confirmed appointment in database, but none was found for caller.",
+        reason: "Expected booked appointment in database, but none was found for caller.",
       };
     }
   }
@@ -98,12 +98,12 @@ export async function gradeDbState(
       SELECT count(*)::int as count 
       FROM appointments a
       JOIN patients p ON a.patient_id = p.id
-      WHERE p.full_name = ${scenario.caller_info.stated_name} AND a.status = 'confirmed'
+      WHERE p.full_name = ${scenario.caller_info.stated_name} AND a.status = 'booked'
     `;
     if ((rows[0]?.count ?? 0) > 0) {
       return {
         passed: false,
-        reason: "Expected appointment to be cancelled, but confirmed appointment remains.",
+        reason: "Expected appointment to be cancelled, but booked appointment remains.",
       };
     }
   }

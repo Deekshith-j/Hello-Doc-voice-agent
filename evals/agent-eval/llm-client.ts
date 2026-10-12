@@ -26,6 +26,10 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
   "o3-mini": { promptCostPerMillion: 1.1, completionCostPerMillion: 4.4 },
   "claude-3-5-haiku-20241022": { promptCostPerMillion: 0.8, completionCostPerMillion: 4.0 },
   "claude-3-5-sonnet-20241022": { promptCostPerMillion: 3.0, completionCostPerMillion: 15.0 },
+  "gemini-2.5-flash": { promptCostPerMillion: 0.075, completionCostPerMillion: 0.3 },
+  "gemini-3.5-flash": { promptCostPerMillion: 0.15, completionCostPerMillion: 0.6 },
+  "gemini-3.5-flash-lite": { promptCostPerMillion: 0.05, completionCostPerMillion: 0.2 },
+  "gemini-flash-latest": { promptCostPerMillion: 0.075, completionCostPerMillion: 0.3 },
 };
 
 export interface ChatMessage {
@@ -92,6 +96,7 @@ export class LlmClient {
     if (this.baseUrl.includes("openrouter.ai")) return "OpenRouter";
     if (this.baseUrl.includes("groq.com")) return "Groq";
     if (this.baseUrl.includes("anthropic.com")) return "Anthropic";
+    if (this.baseUrl.includes("googleapis.com") || this.apiKey.startsWith("AQ.")) return "Google Gemini";
     if (this.apiKey.startsWith("sk-ant-")) return "Anthropic";
     if (this.apiKey.startsWith("sk-proj-") || this.apiKey.startsWith("sk-"))
       return "OpenAI";
@@ -202,18 +207,56 @@ export class LlmClient {
       if (params.tool_choice) body.tool_choice = params.tool_choice;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const maxRetries = 4;
+    let attempt = 0;
+    let response: Response | undefined;
+    let errText = "";
 
-    if (!response.ok) {
-      const errText = await response.text();
+    while (attempt <= maxRetries) {
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        break;
+      }
+
+      errText = await response.text();
+      if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+        let waitMs = 2500 * Math.pow(2, attempt);
+        const retryAfter = response.headers.get("retry-after");
+        if (retryAfter) {
+          const parsed = parseInt(retryAfter, 10);
+          if (!isNaN(parsed) && parsed > 0) waitMs = parsed * 1000;
+        } else {
+          const match = errText.match(/retryDelay"?:\s*"(\d+(?:\.\d+)?)s/i);
+          if (match && match[1]) {
+            waitMs = Math.ceil(parseFloat(match[1]) * 1000) + 500;
+          }
+        }
+
+        if (waitMs > 60000) {
+          throw new Error(
+            `LLM API daily quota exhausted for ${params.model} (retry in ${(waitMs / 3600000).toFixed(1)}h): ${errText}`,
+          );
+        }
+
+        console.warn(`[LLM RateLimit/Error ${response.status}] Retrying in ${(waitMs / 1000).toFixed(1)}s (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise((r) => setTimeout(r, waitMs));
+        attempt++;
+        continue;
+      }
+
       throw new Error(`LLM API returned ${response.status}: ${errText}`);
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`LLM API returned ${response?.status ?? "unknown"}: ${errText}`);
     }
 
     const data = (await response.json()) as {

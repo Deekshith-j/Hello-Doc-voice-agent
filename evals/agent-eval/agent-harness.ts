@@ -14,6 +14,8 @@ import { PostgresClinicRepository } from "@/db/postgres-clinic-repository";
 import { createAvailabilityService } from "@/domain/availability-service";
 import { buildPrompt } from "@/integrations/retell/agent-definition";
 
+import { z } from "zod";
+
 import { FakeCalendar } from "../../tests/support/fake-calendar";
 import type { TestDatabase } from "../../tests/support/test-database";
 import type { ChatCompletionTool, ChatMessage } from "./llm-client";
@@ -23,9 +25,9 @@ import type { ToolCallRecord } from "./types";
 function toOpenAiTool(
   name: string,
   description: string,
-  schema: import("zod").ZodType,
+  schema: z.ZodType,
 ): ChatCompletionTool {
-  const json = import("zod").z.toJSONSchema(schema, { io: "input" }) as {
+  const json = z.toJSONSchema(schema, { io: "input" }) as {
     properties?: Record<string, unknown>;
     required?: string[];
   };

@@ -71,8 +71,8 @@ async function seedScenarioState(
 
     if (patientRow[0] && doctorRow[0]) {
       await database.sql`
-        INSERT INTO appointments (doctor_id, patient_id, reason, start_at, end_at, status, idempotency_key)
-        VALUES (${doctorRow[0].id}, ${patientRow[0].id}, 'Consultation', ${app.start_at}, ${app.end_at}, ${app.status}, ${'eval-seed-' + Math.random().toString(36).slice(2, 8)})
+        INSERT INTO appointments (doctor_id, patient_id, reason, time_span, status, idempotency_key)
+        VALUES (${doctorRow[0].id}, ${patientRow[0].id}, 'Consultation', tstzrange(${app.start_at}, ${app.end_at}, '[)'), ${app.status}, ${'eval-seed-' + Math.random().toString(36).slice(2, 8)})
       `;
     }
   }
@@ -80,8 +80,8 @@ async function seedScenarioState(
   // Block doctor schedule if specified
   if (starting_db_state.block_doctor_schedule) {
     await database.sql`
-      INSERT INTO time_off (doctor_id, start_at, end_at, reason)
-      SELECT id, '2026-10-12T00:00:00Z', '2026-10-26T23:59:59Z', 'Vacation'
+      INSERT INTO time_off (doctor_id, time_span, reason)
+      SELECT id, tstzrange('2026-10-12T00:00:00Z', '2026-10-26T23:59:59Z', '[)'), 'Vacation'
       FROM doctors
     `;
   }
@@ -224,9 +224,18 @@ export async function runAgentEval(options?: {
             });
             turnsCount++;
 
-            if (agentTurnResult.endedCall) {
+            if (
+              agentTurnResult.endedCall ||
+              (/\b(goodbye|bye)\b/i.test(patientSpeech) &&
+                /\b(goodbye|bye|have a (great|good) day|take care)\b/i.test(
+                  agentTurnResult.reply,
+                ))
+            ) {
               break;
             }
+
+            // Small delay between conversational turns to respect rate limits
+            await new Promise((r) => setTimeout(r, 1500));
           }
         } catch (turnErr) {
           if (turnErr instanceof BudgetExceededError) throw turnErr;
@@ -392,7 +401,7 @@ export async function runAgentEval(options?: {
 }
 
 // CLI execution
-if (process.argv[1]?.endsWith("runner.ts")) {
+if (process.argv[1]?.includes("runner")) {
   const isSmoke =
     process.argv.includes("--smoke") || !process.argv.includes("--full");
   runAgentEval({ mode: isSmoke ? "smoke" : "full" }).catch((err) => {

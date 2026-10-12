@@ -210,6 +210,6 @@ describe("DB State Grader Invariants", () => {
 
     const grade = await gradeDbState(mockSql, dummyScenario);
     expect(grade.passed).toBe(false);
-    expect(grade.reason).toContain("Overlapping confirmed appointments found");
+    expect(grade.reason).toContain("Overlapping booked appointments found");
   });
 });

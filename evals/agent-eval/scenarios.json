@@ -102,7 +102,7 @@
         "doctor_name": "Dr. Sarah Chen",
         "start_at": "2026-10-20T14:00:00Z",
         "end_at": "2026-10-20T14:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {
@@ -131,7 +131,7 @@
         "doctor_name": "Dr. Marcus Vance",
         "start_at": "2026-10-21T16:00:00Z",
         "end_at": "2026-10-21T16:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {
@@ -160,7 +160,7 @@
         "doctor_name": "Dr. Sarah Chen",
         "start_at": "2026-10-22T10:00:00Z",
         "end_at": "2026-10-22T10:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {
@@ -189,7 +189,7 @@
         "doctor_name": "Dr. Sarah Chen",
         "start_at": "2026-10-23T11:00:00Z",
         "end_at": "2026-10-23T11:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {
@@ -363,7 +363,7 @@
         "doctor_name": "Dr. Sarah Chen",
         "start_at": "2026-10-20T09:00:00Z",
         "end_at": "2026-10-20T09:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {
@@ -397,7 +397,7 @@
         "doctor_name": "Dr. Sarah Chen",
         "start_at": "2026-10-20T10:00:00Z",
         "end_at": "2026-10-20T10:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {
@@ -633,7 +633,7 @@
         "doctor_name": "Dr. Sarah Chen",
         "start_at": "2026-10-21T10:00:00Z",
         "end_at": "2026-10-21T10:30:00Z",
-        "status": "confirmed"
+        "status": "booked"
       }
     },
     "expected_outcome": {

@@ -56,15 +56,17 @@ Please evaluate the agent's performance in this conversation according to the ru
         { role: "user", content: prompt },
       ],
       temperature: 0,
-      max_tokens: 150,
+      max_tokens: 400,
     });
 
     const content = res.message.content?.trim() ?? "";
-    const cleanJson = content
+    const stripped = content
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
-      .replace(/\s*```$/, "")
+      .replace(/\s*```$/i, "")
       .trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+    const cleanJson = jsonMatch ? jsonMatch[0] : stripped;
 
     const parsed = JSON.parse(cleanJson) as { passed: boolean; reason: string };
     return {
