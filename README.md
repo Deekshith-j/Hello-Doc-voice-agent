@@ -1,184 +1,183 @@
-# Docto — AI Clinic Appointment Voice Agent
+# Docto
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=flat-square&logo=postgresql)](https://supabase.com/)
-[![Retell AI](https://img.shields.io/badge/Retell_AI-Voice_Agent-7c3aed?style=flat-square)](https://retellai.com/)
-[![Tests](https://img.shields.io/badge/Tests-103_Passed-success?style=flat-square&logo=vitest)](https://vitest.dev/)
+## 1. What It Is
 
-Docto is an autonomous AI voice receptionist for clinical front desks. Powered by **Retell AI** (`gpt-6-luna`), PostgreSQL concurrency-safe exclusion constraints, and two-way Google Calendar synchronization, Docto handles patient lookup, availability checking, scheduling, rescheduling, and cancellations over phone and browser web calls in real time.
+Docto is an AI voice receptionist for clinical appointment scheduling. It handles patient lookup, availability checks, bookings, rescheduling, and cancellations over telephone calls and browser audio. The backend uses PostgreSQL exclusion constraints to prevent double-booking and synchronizes appointments with external calendars.
 
-Live Deployment: [https://docto-agent.vercel.app](https://docto-agent.vercel.app)
+Live demo: [https://docto-agent.vercel.app](https://docto-agent.vercel.app)
 
 ---
 
-## Application Preview
-
-![Docto Live Call Workspace](docs/images/dashboard.png)
-
-*The live front-desk workspace: real-time call stage, live transcript stream, tool execution audit trail, and clinic agenda.*
-
----
-
-## Key Features
-
-- **Conversational Voice Scheduling**: Real-time natural phone & browser audio calls powered by Retell AI with conversational turn-taking and interruption handling.
-- **Race-Condition Proof Double-Booking Prevention**: PostgreSQL GiST exclusion constraints (`appointments_no_doctor_overlap`) enforce database-level slot locks across concurrent callers.
-- **Strict Server-Derived Idempotency**: Cryptographic hashes of `call_id + patient_id + doctor_id + start_at` guarantee repeat tool calls never duplicate records.
-- **Two-Way External Calendar Sync**: Non-blocking Google Calendar integration that records bookings locally immediately, then syncs external calendars with background retries.
-- **Real-Time Operator Observability**: Interactive dashboard streaming live call transcripts, step-by-step tool invocations, upcoming appointments, and provider shifts.
-- **Automated Tool Contract Eval Suite**: Benchmark test harness evaluating tool schemas, availability accuracy, and edge-case multi-turn scenarios.
-
----
-
-## Architecture Overview
+## 2. How It Works
 
 ```text
-                  ┌────────────────────────┐
-                  │    Patient / Caller    │
-                  └───────────┬────────────┘
-                              │ Voice (WebRTC / Telephony)
-                              ▼
-                  ┌────────────────────────┐
-                  │    Retell AI Voice     │
-                  └───────────┬────────────┘
-                              │ Signed HTTP Function Calls & Webhooks
-                              ▼
-                  ┌────────────────────────┐
-                  │   Next.js API Engine   │
-                  │   (/api/tools/*)       │
-                  └─────┬────────────┬─────┘
-                        │            │
-       PostgreSQL DDL / │            │ Google Calendar API
-       GiST Range Locks │            │ Free/Busy & Event Upsert
-                        ▼            ▼
-        ┌──────────────────┐      ┌──────────────────┐
-        │ Supabase / PG    │      │ Google Calendar  │
-        │ (Truth Source)   │      │ (External Sync)  │
-        └──────────────────┘      └──────────────────┘
+  Caller (Phone / Web)
+          │  Audio
+          ▼
+    Retell AI Voice Engine
+          │  Signed HTTP Tool Calls
+          ▼
+   Next.js Tool API Routes (/api/tools/*)
+     ├── PostgreSQL (Supabase) ── GiST Exclusion Constraint & Idempotency
+     └── Google Calendar API   ── Inline Free/Busy & Background Sync
+```
+
+1. A caller initiates a conversation via phone or browser web audio.
+2. Retell voice agent collects the caller's full name and date of birth, invoking `/api/tools/find-patient`.
+3. The agent queries open schedule intervals through `/api/tools/check-availability` for the requested doctor and date.
+4. The caller selects an offered time slot, and the agent calls `/api/tools/book-appointment`.
+5. The API route derives an idempotency key and commits the booking in PostgreSQL, guarded by a GiST exclusion constraint against double-booking.
+6. The booking confirmation returns to the agent to speak to the caller, while Google Calendar sync runs inline with a timeout and queues for background retry on failure.
+
+---
+
+## 3. Tech Stack
+
+| Layer | Tool | Reason |
+|---|---|---|
+| Runtime & Framework | Next.js 16 (App Router) / Node.js 24 | Unified full-stack serverless API routes, server actions, and dashboard UI. |
+| Language | TypeScript | Strict static type safety across database schemas, tool definitions, and application code. |
+| Database & ORM | PostgreSQL (Supabase) / Drizzle ORM | Relational persistence with btree_gist exclusion constraints for race-condition prevention. |
+| Voice Telephony | Retell AI | Real-time conversational voice streaming, speech-to-text, and audio turn-taking. |
+| UI & Styling | Tailwind CSS | Responsive styling for the clinical operations console. |
+| Test Runner | Vitest | Fast test execution with isolated transaction support. |
+| Calendar Integration | Google Calendar API | External calendar free/busy lookup and event synchronization. |
+| Evaluation LLMs | Google Gemini API | Automated multi-turn patient dialogue simulation and rubric evaluation. |
+
+---
+
+## 4. Project Structure
+
+```text
+.github/      GitHub Actions CI workflows and scheduled tasks
+docs/         Architecture, walkthrough, engineering decisions, and design Q&A
+drizzle/      PostgreSQL migrations and schema tracking
+evals/        Tool API regression suite and multi-turn agent evaluation harness
+src/          Next.js application source code, API routes, domain logic, and repositories
+tests/        Unit, concurrency, and integration test suites
 ```
 
 ---
 
-## Tech Stack
+## 5. Setup
 
-| Layer | Technologies |
-|---|---|
-| **Frontend & UI** | Next.js 16 (App Router), React 19, Tailwind CSS v4, Lucide Icons |
-| **Backend API** | Next.js Route Handlers, Server Actions, Node.js crypto primitives |
-| **Database** | PostgreSQL / Supabase, `postgres.js`, Drizzle ORM, `btree_gist` extension |
-| **Voice AI** | Retell AI (`retell-client-js-sdk` v3, `retell-sdk`, `gpt-6-luna`) |
-| **Integrations** | Google Calendar API (`google-auth-library` offline OAuth2) |
-| **Testing** | Vitest (103 unit & integration tests with wire-protocol isolation) |
+### Prerequisites
 
----
+- Node.js 24+
+- npm 10+
+- A PostgreSQL database instance (such as Supabase) with the `btree_gist` extension available
 
-## Quick Start
+### Environment Variables
 
-### 1. Clone & Install
+Configure the following variables in `.env.local`:
 
-```bash
-git clone https://github.com/Deekshith-j/Hello-Doc-voice-agent.git
-cd Hello-Doc-voice-agent
-npm install
-```
+- `DATABASE_URL`: Transaction pooler connection string (port 6543) for runtime queries, configured with `prepare: false`.
+- `DIRECT_URL`: Direct PostgreSQL connection string (port 5432) for migrations and DDL operations.
+- `TEST_DATABASE_URL`: Isolated PostgreSQL database URL for running the test suite and evaluation harnesses.
+- `RETELL_API_KEY`: Retell AI API secret key for agent provisioning and webhook signature verification.
+- `RETELL_AGENT_ID`: Provisioned Retell voice agent identifier.
+- `PUBLIC_BASE_URL`: Public HTTPS base URL registered with Retell for webhooks and tool routes.
+- `CRON_SECRET`: Bearer authentication token protecting the internal calendar synchronization endpoint.
+- `GOOGLE_CLIENT_ID`: OAuth2 client ID for Google Calendar API integration.
+- `GOOGLE_CLIENT_SECRET`: OAuth2 client secret for Google Calendar API integration.
+- `GOOGLE_REFRESH_TOKEN`: Offline OAuth2 refresh token for Google Calendar API access.
+- `LLM_API_KEY`: Google Gemini API key used by the simulated evaluation harness.
+- `WEB_CALLS_ENABLED`: Feature flag (`true` or `false`) controlling browser web-call access on `/api/retell/web-call`.
 
-### 2. Configure Environment
+### Installation and Initialization
 
-Copy `.env.example` to `.env.local`:
+1. Install dependencies:
+   ```bash
+   npm ci
+   ```
 
-```bash
-cp .env.example .env.local
-```
+2. Run database migrations:
+   ```bash
+   npm run migrate
+   ```
 
-Key environment variables:
+3. Seed synthetic clinic data:
+   ```bash
+   npm run seed
+   ```
 
-```env
-# Database (Supabase PostgreSQL pooled URL for runtime)
-DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:6543/postgres
+4. Provision the Retell agent prompt and tools:
+   ```bash
+   npm run agent:provision
+   ```
 
-# Direct database URL (port 5432, required for DDL migrations & seeds)
-DIRECT_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
-
-# Test database URL (isolated test database for Vitest and evals)
-TEST_DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres_test
-
-# Retell AI
-RETELL_API_KEY=your_retell_api_key
-RETELL_AGENT_ID=your_retell_agent_id
-RETELL_LLM_ID=your_retell_llm_id
-
-# Public URL (for registering Retell webhook & tool URLs)
-PUBLIC_BASE_URL=https://docto-agent.vercel.app
-
-# Optional Calendar Sync & Background Reconciliation
-CRON_SECRET=your_random_32_character_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REFRESH_TOKEN=your_offline_refresh_token
-```
-
-### 3. Database Migrations & Seed
-
-```bash
-npm run db:migrate
-npm run db:seed -- --target=main
-```
-
-### 4. Provision Retell Agent
-
-To configure the LLM prompt, voice, and all 8 custom tool endpoints on Retell (9 tools total including end_call):
-
-```bash
-npm run retell:setup
-```
-
-### 5. Run Locally
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the Live Call workspace.
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
 ---
 
-## Quality Verification
+## 6. Commands
 
-Run the verification suite:
-
-```bash
-# Typecheck TypeScript
-npm run typecheck
-
-# Lint (zero warnings allowed)
-npm run lint
-
-# Run all 103 unit & integration tests
-npm test
-
-# Run tool contract evaluation harness
-npm run eval
-
-# Run simulated multi-turn agent evaluation suite
-npm run eval:agent
-
-# Production build verification
-npm run build
-```
+- `npm run typecheck`: Runs `next typegen && tsc --noEmit` to verify TypeScript types.
+- `npm run lint`: Runs ESLint with zero warnings allowed.
+- `npm test`: Runs the Vitest test suite (103 tests across 13 test files).
+- `npm run eval`: Runs the 14-scenario tool API regression suite against the test database.
+- `npm run eval:agent`: Runs the multi-turn agent evaluation harness with simulated patient and judge.
+- `npm run build`: Generates the production Next.js build using Turbopack.
 
 ---
 
-## Known Limitations
+## 7. Testing and Evaluation
 
-1. **Calendar write path unverified against a live calendar**: Google Calendar sync is validated against mock adapters and unit tests, but the live OAuth refresh token write path has not been verified against an active production Google Workspace enterprise calendar.
-2. **Public demo with synthetic data only**: The dashboard and web call interface operate purely on synthetic test fixtures and seed data. It is not HIPAA-certified and must not be connected to real clinical EHR records or live PHI.
-3. **DOB plus name is weak identity verification**: Verification relies solely on full name and date of birth. While common in outpatient phone intake, it offers no cryptographic or multi-factor authentication (e.g. SMS OTP or carrier ANI verification) and can be spoofed by acquaintances.
-4. **Per-instance web-call rate limit**: Browser demo calls on `/api/retell/web-call` are throttled at 5 per IP per hour and 30 per day overall, both enforced via an in-memory sliding window per serverless instance (not concurrency) rather than a globally coordinated Redis cluster.
-5. **Small eval suite (5-scenario smoke test, N=1)**: Results verified against [`evals/results/agent-eval-smoke-1791833840065.json`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/evals/results/agent-eval-smoke-1791833840065.json):
-   - **Mode**: 5-scenario smoke test (`book-exist-01`, `book-exist-02`, `reg-new-01`, `reg-new-02`, `resched-01`), repetitions `N=1`.
-   - **Raw Values**: `total_runs: 5`, `passed_runs: 4`, `overall_pass_rate: 80.0%` (category breakdown: `book_existing_patient`: 1/2 or 50%, `register_new_patient_then_book`: 2/2 or 100%, `reschedule`: 1/1 or 100%; database invariant satisfaction: 5/5 or 100%).
-   - **Tokens & Cost**: `total_tokens: 397036`, `total_cost_usd: 0.0204` ($0.0204 USD under the $2.00 hard budget cap).
-   - **Latency**: `median_latency_per_turn_ms: 957` ms. *Note: This latency is simulated LLM inference latency per turn in text mode, not Retell voice latency (which includes telephony WebRTC, speech-to-text, and audio synthesis streaming).*
-   - The full 30-scenario eval run has not been run because the free-tier Gemini API key enforces a strict 15 RPM (requests per minute) rate limit; executing all 30 multi-turn scenarios (~300+ LLM turns across patient simulator, agent, and judge) hits provider 429 rate limits unless paced with long inter-call delays or run with a paid tier.
-6. **Hardcoded emergency number**: The emergency escalation number (`911`) is hardcoded into the agent prompt rather than dynamically localized to regional dispatch centers (e.g. `999` in the UK, `112` in the EU) based on caller telecom ANI or clinic geolocation.
+The repository contains two distinct verification layers:
+
+1. **Unit and Integration Suite (Vitest)**: 103 tests across 13 test files.
+   - Measures pure slot math across daylight saving cutovers, partial overlaps, doctor working hours, and time off.
+   - Verifies PostgreSQL GiST exclusion constraint concurrency under racing parallel bookings.
+   - Validates server-derived idempotency key hashing, cancellation revival, sliding-window rate limiting, and tool route error sanitization.
+
+2. **Evaluation Layer (`evals/`)**:
+   - **Tool API Regression Suite** (`evals/tool-api-suite/`): 14 deterministic scenarios validating tool endpoint HTTP response contracts and database states.
+   - **Multi-Turn Agent Evaluation Harness** (`evals/agent-eval/`): Simulates dynamic patient conversations against the system prompt, measuring tool call sequencing, database post-conditions, and LLM judge rubrics (bedside manner, medical safety).
+
+### Evaluation Results
+
+Results from `evals/results/agent-eval-smoke-1791833840065.json`:
+
+- **Suite Mode**: 5-scenario smoke test (`book-exist-01`, `book-exist-02`, `reg-new-01`, `reg-new-02`, `resched-01`), repetitions `N=1`.
+- **Pass Rate**: 4 of 5 runs passed (80.0% overall pass rate).
+  - `book_existing_patient`: 1 / 2 passed (50.0%)
+  - `register_new_patient_then_book`: 2 / 2 passed (100.0%)
+  - `reschedule`: 1 / 1 passed (100.0%)
+- **Database Invariant Satisfaction**: 5 of 5 runs satisfied (100.0%).
+- **Tokens and Cost**: 397,036 total tokens, $0.0204 USD total cost (within the $2.00 hard budget cap).
+- **Latency**: Median LLM turn latency of 957 ms.
+
+### Evaluation Models
+
+- **Agent Model**: `gemini-flash-lite-latest`
+- **Patient Model**: `gemini-3.5-flash-lite`
+- **Judge Model**: `gemini-3.1-flash-lite`
+- **Deployed Retell Model**: `gpt-6-luna`
+
+*Note*: The evaluation harness agent runs in text mode using `gemini-flash-lite-latest` for low-cost automated testing. The production voice agent deployed on Retell uses `gpt-6-luna` with voice streaming and turn-taking.
+
+---
+
+## 8. Key Design Decisions
+
+- **Exclusion constraint**: PostgreSQL partial GiST exclusion constraint (`appointments_no_doctor_overlap`) on `(doctor_id WITH =, time_span WITH &&) WHERE (status = 'booked')` using `btree_gist`. Overlapping bookings for the same doctor fail at the database engine level with SQLSTATE `23P01`, preventing double-booking during concurrent caller races.
+- **Server-derived idempotency key**: Idempotency keys are computed server-side from `sha256(call_id:patient_id:doctor_id:start_time)` rather than client-supplied strings. If an identical booking is attempted repeatedly within the same call session, the existing record is returned. A cancelled appointment re-booked in the same session revives the record in place.
+- **Timezone and daylight saving handling**: Doctor hours are stored in local clinic timezones (`America/New_York`). `getFreeSlots` expands weekly recurring rules into UTC intervals while accounting for 23-hour and 25-hour daylight saving transition days, validating offsets before database queries.
+- **Pooler vs direct connection with prepare:false**: Runtime queries connect to Supabase's transaction pooler on port 6543 with `prepare: false` because transaction poolers multiplex connections and discard prepared statements across transactions. DDL migrations connect directly to PostgreSQL on port 5432 via `DIRECT_URL`.
+- **RLS enabled with no policies and access control in code**: Row Level Security is enabled on all PostgreSQL tables to block access through Supabase's public anonymous and authenticated PostgREST roles. The backend connects as the database owner, bypassing RLS, while tenant and patient access boundaries are enforced in application code.
+- **Tool route adapter**: `createToolHandler` wraps each tool endpoint with Zod schema validation, HMAC-SHA256 signature verification for Retell requests, sliding-window rate limiting, execution latency tracking, zero-PHI logging, and error redaction.
+- **Calendar sync**: Google Calendar event writes are attempted inline with a 4-second timeout during booking and cancellation. If the external calendar write fails or times out, the PostgreSQL transaction is preserved, calendar sync is marked `failed`, and reconciliation is retried in the background via `/api/internal/calendar-sync`.
+
+---
+
+## 9. Known Limitations
+
+- **Calendar write path not verified against a live calendar**: Google Calendar integration is verified with unit tests and mock adapters, but the live OAuth refresh token write path has not been tested against an active production Google Workspace calendar.
+- **Synthetic data only**: The seed dataset and dashboard expose synthetic demonstration records only. The application is not HIPAA-certified and must not be used with real protected health information (PHI).
+- **Name plus date of birth is weak identity verification**: Patient lookup relies on full name and date of birth without two-factor authentication or cryptographic identity verification.
+- **Web-call rate limit is per serverless instance**: Browser web-call rate limiting on `/api/retell/web-call` is tracked in-memory per serverless instance rather than coordinated across instances using a distributed cache such as Redis.
+- **Only a small eval run so far**: Exactly 5 smoke scenarios (`book-exist-01`, `book-exist-02`, `reg-new-01`, `reg-new-02`, `resched-01`) at `N=1` have been executed. The full 30-scenario benchmark was deferred due to the free-tier Gemini API 15 RPM request rate limit.
+- **Emergency number hardcoded**: The emergency escalation number (`911`) is hardcoded in the agent prompt instructions rather than dynamically localized based on caller telephony metadata or clinic location.
