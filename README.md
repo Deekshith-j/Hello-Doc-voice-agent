@@ -22,7 +22,7 @@ Live Deployment: [https://docto-agent.vercel.app](https://docto-agent.vercel.app
 
 ## Key Features
 
-- **Conversational Voice Scheduling**: Real-time natural phone & browser audio calls powered by Retell AI with sub-second latency and interruption handling.
+- **Conversational Voice Scheduling**: Real-time natural phone & browser audio calls powered by Retell AI with conversational turn-taking and interruption handling.
 - **Race-Condition Proof Double-Booking Prevention**: PostgreSQL GiST exclusion constraints (`appointments_no_doctor_overlap`) enforce database-level slot locks across concurrent callers.
 - **Strict Server-Derived Idempotency**: Cryptographic hashes of `call_id + patient_id + doctor_id + start_at` guarantee repeat tool calls never duplicate records.
 - **Two-Way External Calendar Sync**: Non-blocking Google Calendar integration that records bookings locally immediately, then syncs external calendars with background retries.
@@ -69,7 +69,7 @@ Live Deployment: [https://docto-agent.vercel.app](https://docto-agent.vercel.app
 | **Database** | PostgreSQL / Supabase, `postgres.js`, Drizzle ORM, `btree_gist` extension |
 | **Voice AI** | Retell AI (`retell-client-js-sdk` v3, `retell-sdk`, `gpt-6-luna`) |
 | **Integrations** | Google Calendar API (`google-auth-library` offline OAuth2) |
-| **Testing** | Vitest (78 unit/integration tests with wire-protocol isolation) |
+| **Testing** | Vitest (103 unit & integration tests with wire-protocol isolation) |
 
 ---
 
@@ -94,8 +94,14 @@ cp .env.example .env.local
 Key environment variables:
 
 ```env
-# Database (Supabase PostgreSQL pooled or direct URL)
-DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
+# Database (Supabase PostgreSQL pooled URL for runtime)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:6543/postgres
+
+# Direct database URL (port 5432, required for DDL migrations & seeds)
+DIRECT_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
+
+# Test database URL (isolated test database for Vitest and evals)
+TEST_DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres_test
 
 # Retell AI
 RETELL_API_KEY=your_retell_api_key
@@ -121,7 +127,7 @@ npm run db:seed -- --target=main
 
 ### 4. Provision Retell Agent
 
-To configure the LLM prompt, voice, and all 7 tool endpoints on Retell:
+To configure the LLM prompt, voice, and all 8 custom tool endpoints on Retell (9 tools total including end_call):
 
 ```bash
 npm run retell:setup
@@ -148,11 +154,14 @@ npm run typecheck
 # Lint (zero warnings allowed)
 npm run lint
 
-# Run all 78 unit & integration tests
+# Run all 103 unit & integration tests
 npm test
 
 # Run tool contract evaluation harness
 npm run eval
+
+# Run simulated multi-turn agent evaluation suite
+npm run eval:agent
 
 # Production build verification
 npm run build
@@ -171,5 +180,5 @@ npm run build
    - **Raw Values**: `total_runs: 5`, `passed_runs: 4`, `overall_pass_rate: 80.0%` (category breakdown: `book_existing_patient`: 1/2 or 50%, `register_new_patient_then_book`: 2/2 or 100%, `reschedule`: 1/1 or 100%; database invariant satisfaction: 5/5 or 100%).
    - **Tokens & Cost**: `total_tokens: 397036`, `total_cost_usd: 0.0204` ($0.0204 USD under the $2.00 hard budget cap).
    - **Latency**: `median_latency_per_turn_ms: 957` ms. *Note: This latency is simulated LLM inference latency per turn in text mode, not Retell voice latency (which includes telephony WebRTC, speech-to-text, and audio synthesis streaming).*
-   - Full 30-scenario matrix requires elevated multi-model API quotas to avoid provider rate limiting.
+   - The full 30-scenario eval run has not been run because the free-tier Gemini API key enforces a strict 15 RPM (requests per minute) rate limit; executing all 30 multi-turn scenarios (~300+ LLM turns across patient simulator, agent, and judge) hits provider 429 rate limits unless paced with long inter-call delays or run with a paid tier.
 6. **Hardcoded emergency number**: The emergency escalation number (`911`) is hardcoded into the agent prompt rather than dynamically localized to regional dispatch centers (e.g. `999` in the UK, `112` in the EU) based on caller telecom ANI or clinic geolocation.

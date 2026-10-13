@@ -5,37 +5,37 @@ This document traces the lifecycle of **ONE appointment booking** through every 
 ---
 
 ## The Scenario
-- **Caller**: John Doe (verified existing patient, ID: `d8b242e8-c51f-4b06-a812-32b07d6a5e12`).
-- **Doctor**: Dr. Sarah Chen (Internal Medicine, ID: `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11`).
-- **Selected Time**: Tuesday, October 14, 2026, at 9:30 AM – 10:00 AM EDT.
+- **Caller**: Eleanor Vance (verified existing patient, ID: `36ecf076-a484-47d3-bd3d-b4d1c264e58b`).
+- **Doctor**: Dr. Sarah Chen (Family Medicine, ID: `10000000-0000-4000-8000-000000000002`).
+- **Selected Time**: Tuesday, October 20, 2026, at 9:00 AM – 9:30 AM EDT (`2026-10-20T13:00:00.000Z` to `2026-10-20T13:30:00.000Z`).
 - **Active Retell Call ID**: `call_8829410a7bc3`.
 
 ---
 
 ## Step 1: Voice Capture & Speech-to-Text
-1. **Action**: The caller speaks: *"Yes, please book Tuesday at 9:30 AM with Dr. Chen."*
+1. **Action**: The caller speaks: *"The 9:00 AM slot would be wonderful, thank you."*
 2. **Component**: Retell AI Voice Gateway.
 3. **Processing**:
-   - Audio streams via WebRTC/SIP to Deepgram Nova-2 ASR.
-   - Audio is transcribed to text: `"Yes, please book Tuesday at 9:30 AM with Dr. Chen."`
+   - Audio streams via WebRTC/SIP to Retell's speech stack.
+   - Audio is transcribed to text: `"The 9:00 AM slot would be wonderful, thank you."`
 
 ---
 
 ## Step 2: LLM Reasoning & Function Calling
 1. **Component**: Retell LLM Orchestrator.
-2. **Context**: Prompt constructed via [`src/integrations/retell/agent-definition.ts:buildPrompt`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/integrations/retell/agent-definition.ts#L184).
+2. **Context**: Prompt constructed via [`src/integrations/retell/agent-definition.ts:buildPrompt`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/integrations/retell/agent-definition.ts#L185).
 3. **Decision**:
-   - The caller has previously confirmed slot details and answered "yes".
-   - Under Prompt Rule 4 (Booking), the model emits a structured tool invocation:
+   - The caller has previously received slot options from `check_availability` and confirmed the 9:00 AM slot.
+   - Under Call Flow step 4 (Booking) and the Confirmation rule in the system prompt (`agent-definition.ts`), the model emits a structured tool invocation:
      ```json
      {
        "name": "book_appointment",
        "args": {
-         "doctor_id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-         "patient_id": "d8b242e8-c51f-4b06-a812-32b07d6a5e12",
-         "start_at": "2026-10-14T13:30:00.000Z",
-         "end_at": "2026-10-14T14:00:00.000Z",
-         "reason": "Routine checkup"
+         "doctor_id": "10000000-0000-4000-8000-000000000002",
+         "patient_id": "36ecf076-a484-47d3-bd3d-b4d1c264e58b",
+         "start_at": "2026-10-20T13:00:00.000Z",
+         "end_at": "2026-10-20T13:30:00.000Z",
+         "reason": "Checkup"
        }
      }
      ```
@@ -68,7 +68,7 @@ This document traces the lifecycle of **ONE appointment booking** through every 
    - **Per-Call Rate Limiting**: In `runTool()`:
      - Generates key: `"book_appointment:call:call_8829410a7bc3"`.
      - Calls [`src/server/rate-limiter.ts:consumeRateLimit`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/server/rate-limiter.ts) via `runtime.consumeRateLimit`.
-     - Increments bucket in PostgreSQL via `PostgresClinicRepository.incrementRateLimit`. Limit is permitted (allowed = true).
+     - Uses in-memory sliding window rate limiter. Request is permitted (allowed = true).
    - **Schema Validation**:
      - Evaluates input with [`src/application/tool-schemas.ts:bookAppointmentSchema.safeParse`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/tool-schemas.ts). Input passes.
 
@@ -78,8 +78,8 @@ This document traces the lifecycle of **ONE appointment booking** through every 
 1. **File**: [`src/app/api/tools/book-appointment/route.ts`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/app/api/tools/book-appointment/route.ts)
 2. **Function**: `deriveIdempotencyKey(callId, patientId, doctorId, startAt)`
 3. **Computation**:
-   - Canonical start time: `new Date("2026-10-14T13:30:00.000Z").toISOString()` = `"2026-10-14T13:30:00.000Z"`.
-   - Hash source: `"call_8829410a7bc3:d8b242e8-c51f-4b06-a812-32b07d6a5e12:a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11:2026-10-14T13:30:00.000Z"`.
+   - Canonical start time: `new Date("2026-10-20T13:00:00.000Z").toISOString()` = `"2026-10-20T13:00:00.000Z"`.
+   - Hash source: `"call_8829410a7bc3:36ecf076-a484-47d3-bd3d-b4d1c264e58b:10000000-0000-4000-8000-000000000002:2026-10-20T13:00:00.000Z"`.
    - Produces SHA-256 digest: `idempotencyKey = "8f39a045...e92c"`.
 
 ---
@@ -88,13 +88,13 @@ This document traces the lifecycle of **ONE appointment booking** through every 
 1. **File**: [`src/application/appointment-tool-service.ts`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/appointment-tool-service.ts)
 2. **Function**: `AppointmentToolService.bookAppointment(input)`
 3. **Workflow**:
-   - Validates patient existence via `this.repository.findPatient("d8b242e8-...")`.
-   - Validates doctor existence and active status via `this.repository.findDoctor("a0eebc99-...")`.
+   - Validates patient existence via `this.repository.findPatient("36ecf076-...")`.
+   - Validates doctor existence and active status via `this.repository.findDoctor("10000000-...")`.
    - Executes `this.dependencies.getSlots(doctor.id, dayStart, dayEnd, now)` (created via [`src/domain/availability-service.ts:createAvailabilityService`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/domain/availability-service.ts)):
      - Loads live availability snapshot via `this.repository.loadAvailabilitySnapshot()`: reads rules, time-off, and existing booked appointments.
      - Optionally queries live calendar busy intervals via `calendar.getBusyTimes()`.
      - Invokes pure slot calculation engine [`src/domain/get-free-slots.ts:getFreeSlots`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/domain/get-free-slots.ts): anchors day in doctor's wall-clock timezone, drops invalid DST transition hours, and subtracts booked blocks.
-   - Verifies the requested slot `[13:30, 14:00)` is in the resulting free slots list.
+   - Verifies the requested slot `[13:00, 13:30)` is in the resulting free slots list.
 
 ---
 
@@ -106,10 +106,10 @@ This document traces the lifecycle of **ONE appointment booking** through every 
    INSERT INTO appointments
      (doctor_id, patient_id, time_span, reason, idempotency_key, calendar_sync_status)
    VALUES (
-     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-     'd8b242e8-c51f-4b06-a812-32b07d6a5e12',
-     tstzrange('2026-10-14 13:30:00+00', '2026-10-14 14:00:00+00', '[)'),
-     'Routine checkup',
+     '10000000-0000-4000-8000-000000000002',
+     '36ecf076-a484-47d3-bd3d-b4d1c264e58b',
+     tstzrange('2026-10-20 13:00:00+00', '2026-10-20 13:30:00+00', '[)'),
+     'Checkup',
      '8f39a045...e92c',
      'pending'
    )
@@ -130,22 +130,23 @@ This document traces the lifecycle of **ONE appointment booking** through every 
      ```
      The database checks for overlap during the insert, and a conflicting concurrent transaction waits for the first to commit or abort, then fails with 23P01 (exclusion_violation), preventing double-booking.
    - `appointments_idempotency_key_unique_idx`: Prevents duplicate inserts if Retell retried this request.
-5. **Outcome**: The row is inserted into `appointments` with ID `e5f1b892-482a-41cb-9184-e9e92fa08210`.
+5. **Outcome**: The row is inserted into `appointments` with ID `8bd283b6-b272-450a-a86e-55d1de756830`.
 
 ---
 
-## Step 8: External Calendar Synchronization (Asynchronous)
-1. **File**: [`src/server/tool-route.ts`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/server/tool-route.ts)
+## Step 8: External Calendar Synchronization
+1. **Files**: [`src/application/appointment-tool-service.ts`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/appointment-tool-service.ts) & [`src/server/tool-route.ts`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/server/tool-route.ts)
 2. **Logic**:
-   - Tool response contains `_calendar_pending`.
-   - Schedules background sync using Next.js `after()` API:
+   - `AppointmentToolService.bookAppointment` immediately invokes synchronous calendar sync via `this.dependencies.calendarSync.sync(appointment)`.
+   - If Google Calendar is configured and succeeds, status is updated to `synced`. If not configured, status is `not_configured`.
+   - If external calendar sync fails or times out, the local database booking still stands with `calendar_sync_status = 'pending'`, and the tool response returns code `appointment_booked_calendar_pending`.
+   - When `result.code.endsWith("_calendar_pending")` is detected in `src/server/tool-route.ts`, it enqueues asynchronous background reconciliation via Next.js `after()`:
      ```ts
      after(async () => {
        await runtime.service.retryCalendarSync(appointmentId);
      });
      ```
-   - `runtime.service.retryCalendarSync(appointmentId)` retrieves the newly committed appointment record and invokes [`src/application/calendar-sync.ts:CalendarSync.sync(appointment)`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/calendar-sync.ts).
-   - Calls Google Calendar API (`AvailabilitySource.write`) to insert the calendar event. On success, updates `calendar_sync_status = 'synced'`.
+   - `retryCalendarSync(appointmentId)` retrieves the appointment and calls [`src/application/calendar-sync.ts:CalendarSync.sync(appointment)`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/application/calendar-sync.ts), invoking `AvailabilitySource.write` to mirror the event to Google Calendar.
 
 ---
 
@@ -153,7 +154,7 @@ This document traces the lifecycle of **ONE appointment booking** through every 
 1. **File**: [`src/server/tool-route.ts:recordToolCall`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/server/tool-route.ts)
 2. **Logic**:
    - Calls `sanitizeArguments(args)`: redacts patient names, phone numbers, and dates of birth.
-   - Writes to `calls` table in PostgreSQL: records tool name (`book_appointment`), request ID, latency (e.g. 48 ms), and status.
+   - Writes to the `tool_calls` table in PostgreSQL (via an `INSERT INTO calls ... RETURNING id` CTE that ensures the parent call record exists): records `request_id`, `tool_name` (`book_appointment`), sanitized arguments without PHI, tool result, latency (e.g. 48 ms), and success status.
 
 ---
 
@@ -164,16 +165,22 @@ This document traces the lifecycle of **ONE appointment booking** through every 
    {
      "ok": true,
      "code": "appointment_booked",
-     "message": "You are confirmed for Tuesday, October 14 at 9:30 AM with Dr. Sarah Chen.",
+     "message": "The appointment is booked.",
      "data": {
-       "appointment_id": "e5f1b892-482a-41cb-9184-e9e92fa08210",
+       "appointment_id": "8bd283b6-b272-450a-a86e-55d1de756830",
+       "doctor_id": "10000000-0000-4000-8000-000000000002",
        "doctor_name": "Dr. Sarah Chen",
-       "when": "Tuesday, October 14 at 9:30 AM"
+       "when": "Tuesday, October 20 at 9:00 AM",
+       "start_at": "2026-10-20T13:00:00.000Z",
+       "end_at": "2026-10-20T13:30:00.000Z",
+       "status": "booked",
+       "calendar_sync_status": "not_configured"
      }
    }
    ```
 2. **Retell Voice Engine**:
-   - Reads `message` property.
-   - ElevenLabs streaming TTS converts the sentence to audio chunks.
+   - Reads `message` and data payload.
+   - Retell's speech stack converts the assistant's spoken confirmation into audio chunks streamed via WebRTC/SIP to the caller.
 3. **Caller Hears**:
-   - *"You are confirmed for Tuesday, October 14 at 9:30 AM with Dr. Sarah Chen."*
+   - *"I have successfully booked your appointment with Dr. Sarah Chen for Tuesday, October 20th, at 9:00 AM. Is there anything else I can help you with today?"*
+
