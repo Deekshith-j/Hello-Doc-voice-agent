@@ -27,7 +27,7 @@ type RouteRuntime = Pick<
   "callLog" | "consumeRateLimit" | "retellSigningKey" | "service"
 >;
 
-export interface ToolContext {
+interface ToolContext {
   callId: string | null;
 }
 

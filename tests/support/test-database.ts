@@ -17,13 +17,13 @@ export interface TestDatabase {
   sql: Sql;
 }
 
-export interface ProjectIdentity {
+interface ProjectIdentity {
   projectRef: string | null;
   host: string;
   database: string;
 }
 
-export function extractProjectIdentity(urlStr: string): ProjectIdentity {
+function extractProjectIdentity(urlStr: string): ProjectIdentity {
   const parsed = new URL(urlStr);
   const username = decodeURIComponent(parsed.username);
   let projectRef: string | null = null;
@@ -172,13 +172,6 @@ export async function startTestDatabase(): Promise<TestDatabase> {
   };
 }
 
-export async function closeSharedTestDatabase(): Promise<void> {
-  if (sharedDbPromise) {
-    const shared = await sharedDbPromise;
-    sharedDbPromise = null;
-    await shared.close();
-  }
-}
 
 async function insertFixtures(sql: Sql): Promise<void> {
   // One weekday doctor with four 30-minute morning slots keeps expected results readable.

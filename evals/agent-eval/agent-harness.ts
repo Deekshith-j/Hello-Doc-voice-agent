@@ -50,7 +50,7 @@ function toOpenAiTool(
   };
 }
 
-export const AGENT_TOOLS: ChatCompletionTool[] = [
+const AGENT_TOOLS: ChatCompletionTool[] = [
   toOpenAiTool(
     "list_doctors",
     "List the clinic's doctors with their doctor_id and specialty.",

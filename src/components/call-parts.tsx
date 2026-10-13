@@ -60,7 +60,7 @@ export function ToolActivityList({
   );
 }
 
-export function ToolChip({ tool }: { tool: ToolActivityView }) {
+function ToolChip({ tool }: { tool: ToolActivityView }) {
   const Icon = tool.succeeded ? Check : X;
   return (
     <div className="flex items-center gap-2">

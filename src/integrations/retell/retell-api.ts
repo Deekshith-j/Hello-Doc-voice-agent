@@ -27,7 +27,7 @@ export class RetellApiError extends Error {
   }
 }
 
-export type IceServer = z.infer<typeof iceServerSchema>;
+type IceServer = z.infer<typeof iceServerSchema>;
 
 export interface WebCallSession {
   accessToken: string;

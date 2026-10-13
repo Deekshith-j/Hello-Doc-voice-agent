@@ -34,7 +34,7 @@ export const retellWebhookSchema = z.object({
   call: callSchema,
 });
 
-export type RetellWebhook = z.infer<typeof retellWebhookSchema>;
+type RetellWebhook = z.infer<typeof retellWebhookSchema>;
 type RetellCall = RetellWebhook["call"];
 
 export function toCallStarted(call: RetellCall, now: Date): CallStartedEvent {

@@ -18,7 +18,7 @@ export class BudgetExceededError extends Error {
   }
 }
 
-export interface ModelPricing {
+interface ModelPricing {
   promptCostPerMillion: number;
   completionCostPerMillion: number;
 }

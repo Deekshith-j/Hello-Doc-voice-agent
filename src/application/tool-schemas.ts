@@ -65,7 +65,7 @@ export function normalizePhone(raw: string): string {
   return `+${digitsOnly}`;
 }
 
-export function isE164(phone: string): boolean {
+function isE164(phone: string): boolean {
   return /^\+[1-9]\d{6,14}$/.test(phone);
 }
 

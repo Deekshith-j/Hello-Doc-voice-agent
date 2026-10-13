@@ -8,7 +8,7 @@ import type { TimeInterval } from "./availability";
 const MINUTES_TO_MILLISECONDS = 60_000;
 const TIME_PATTERN = /^(?<hour>[01]\d|2[0-3]):(?<minute>[0-5]\d)$/;
 
-export interface WeeklyAvailabilityRule {
+interface WeeklyAvailabilityRule {
   dayOfWeek: number;
   endTime: string;
   slotDurationMinutes: number;

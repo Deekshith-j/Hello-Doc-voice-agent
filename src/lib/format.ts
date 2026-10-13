@@ -40,24 +40,6 @@ export function formatDateTime(value: Date | string | number, timeZone: string):
   return `${formatDay(d, timeZone)}, ${formatTime(d, timeZone)}`;
 }
 
-export function formatTimeZoneName(value: Date | string | number, timeZone: string): string {
-  const d = toDate(value);
-  const part = formatter(timeZone, { timeZoneName: "short" })
-    .formatToParts(d)
-    .find((entry) => entry.type === "timeZoneName");
-  return part?.value ?? timeZone;
-}
-
-// Returns YYYY-MM-DD for the calendar day that `value` falls on in `timeZone`.
-export function localDateKey(value: Date | string | number, timeZone: string): string {
-  return formatter(timeZone, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-    .format(toDate(value))
-    .replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2");
-}
 
 export function formatDuration(totalSeconds: number): string {
   const safe = Math.max(0, Math.round(totalSeconds));
@@ -88,12 +70,3 @@ export const weekdayNames = [
   "Fri",
   "Sat",
 ] as const;
-
-export function maskPhone(phone: string): string {
-  if (!phone) return "";
-  const trimmed = phone.trim();
-  if (trimmed.length <= 2) return trimmed;
-  const last2 = trimmed.slice(-2);
-  const maskedPrefix = "•".repeat(trimmed.length - 2);
-  return `${maskedPrefix}${last2}`;
-}

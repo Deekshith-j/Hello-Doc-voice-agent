@@ -38,7 +38,7 @@ export class CalendarUnavailableError extends Error {
   }
 }
 
-export class StaleCalendarDataError extends CalendarUnavailableError {
+class StaleCalendarDataError extends CalendarUnavailableError {
   constructor() {
     super();
     this.name = "StaleCalendarDataError";
