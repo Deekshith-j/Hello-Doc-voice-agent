@@ -1,6 +1,6 @@
 // Tool API regression suite.
 // Exercises every tool scenario against an isolated, freshly seeded database and reports the results.
-// Note: This is a tool API regression suite, NOT the Part B agent eval harness.
+// Note: This is a tool API regression suite, distinct from the agent evaluation harness.
 import type { EvalCaseResult } from "@/db/postgres-dashboard-repository";
 
 import { CaseRecorder } from "./checks";

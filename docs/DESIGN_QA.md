@@ -1,6 +1,6 @@
-# Technical Interview Q&A: 15 Hardest Engineering Questions
+# Technical Design Q&A: 15 Core Engineering Questions
 
-This document prepares you for a deep-dive technical interview on the Docto architecture, concurrency guarantees, telephony integrations, and evaluation harness.
+This document details the engineering design of the Docto architecture, concurrency guarantees, telephony integrations, and evaluation harness.
 
 ---
 

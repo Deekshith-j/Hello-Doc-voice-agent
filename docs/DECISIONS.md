@@ -1,4 +1,4 @@
-<!-- Records architectural choices as they are made so interview discussion follows the code's history. -->
+<!-- Records architectural choices as they are made so technical review follows the code's history. -->
 <!-- Each phase names rejected alternatives and failure modes instead of presenting choices as inevitable. -->
 
 # Engineering decisions
@@ -22,7 +22,7 @@ Drizzle owns the typed application schema and query mapping, while the initial m
 
 Ranges are half-open (`[start,end)`). That makes adjacent appointments legal: a 10:00 appointment may begin exactly when a 09:30 appointment ends. UTC instants are stored in `tstzrange`; the doctor's IANA timezone is used only while expanding recurring wall-clock rules. Passing `now` into the calculator keeps “past” deterministic in tests.
 
-The assignment calls `getFreeSlots(doctorId, from, to)` a pure function, but fetching by ID is I/O. The implementation deliberately separates `getFreeSlots(snapshot, from, to, now)` (pure) from `createAvailabilityService(...).getFreeSlotsForDoctor(doctorId, ...)` (I/O). This is easier to explain and test than hiding a database dependency behind a supposedly pure signature.
+The specification calls `getFreeSlots(doctorId, from, to)` a pure function, but fetching by ID is I/O. The implementation deliberately separates `getFreeSlots(snapshot, from, to, now)` (pure) from `createAvailabilityService(...).getFreeSlotsForDoctor(doctorId, ...)` (I/O). This is easier to explain and test than hiding a database dependency behind a supposedly pure signature.
 
 The external calendar boundary returns both busy intervals and a retrieval timestamp. The service rejects data older than the named two-minute freshness limit and fails closed if Google or Cal.com is unavailable. Two minutes is a starting operational policy, not a claim that calendars offer transactional reads; Phase 3 will make it configurable. Silently treating a failed calendar as empty would risk a real-world double booking.
 
@@ -78,9 +78,9 @@ Planning Time: 0.401 ms
 Execution Time: 0.238 ms
 ```
 
-### Explainability notes for interview discussion
+### Explainability notes for technical review
 
-The shortest accurate explanation is: “Weekly schedules describe local intent, the pure function turns that intent into UTC candidates, busy sources subtract candidates, and Postgres still decides the winner at insert time.” The tests mirror that story from deterministic calculation through the final database invariant.
+The shortest accurate explanation is: “Weekly schedules describe local intent, the pure function turns that intent into UTC slot options, busy sources subtract booked intervals, and Postgres still decides the winner at insert time.” The tests mirror that story from deterministic calculation through the final database invariant.
 
 JSON and generated lockfiles cannot begin with comments without becoming invalid. The 2–4 line file header rule is applied to every source, SQL, Markdown, and environment-example file where the format permits comments.
 
@@ -178,7 +178,7 @@ The preview was rebuilt using patterns from current AI-product interfaces: Geist
   - *Rescheduling conflict detection*: If a booking was rescheduled to a new time and the original booking request is retried with the original idempotency key, `assertSameBooking` detects the changed time payload and explicitly rejects with `idempotency_key_reused` (409) rather than overwriting or resurrecting the old time.
   - *Intervening competitor protection*: If another patient books the slot after it was cancelled, either the domain availability check or PostgreSQL's GiST exclusion constraint (`appointments_no_doctor_overlap`) triggers with `23P01`. The catch block inspects the conflicting row: because `patient_id` belongs to the competing patient, revival is rejected and the caller receives `slot_unavailable` with fresh alternative slots.
 ### Public Demo Mode & Login Removal Decision
-- **Why removed**: For interview evaluations and public product demos, requiring passphrase authentication (`DASHBOARD_PASSWORD` and `SESSION_SECRET`) created deployment friction and credential blockers. The dashboard was made directly accessible with `/` loading the Live Call workspace immediately.
+- **Why removed**: For technical evaluations and public product demos, requiring passphrase authentication (`DASHBOARD_PASSWORD` and `SESSION_SECRET`) created deployment friction and credential blockers. The dashboard was made directly accessible with `/` loading the Live Call workspace immediately.
 - **Safety invariant**: All dashboard routes (`/appointments`, `/doctors`, `/calls`, `/evaluations`) are strictly read-only and expose exclusively synthetic seed data.
 - **PHI warning**: Public demo mode is suitable only for synthetic datasets. Authentication and session verification must be re-enabled prior to storing real patient records or protected health information (PHI).
 - **Public Web Call endpoint protection**: `/api/retell/web-call` is protected by dual rate limiting (max 5 per IP per hour, 30 per day overall) and an environment kill switch (`WEB_CALLS_ENABLED`, default `true`).
