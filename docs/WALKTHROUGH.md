@@ -1,31 +1,31 @@
-# End-to-End Walkthrough: From Caller Utterance to Appointments Row
+# End-to-End Walkthrough: From Utterance to Appointments Row (from the eval harness, text mode)
 
-This document traces the lifecycle of **ONE appointment booking** through every layer of the system: from the caller's spoken voice to a committed row in PostgreSQL.
+This document traces the lifecycle of **ONE appointment booking** from the eval harness, text mode (scenario `book-exist-02` recorded in `evals/results/agent-eval-smoke-1791833840065.json`), illustrating every layer of the system down to a committed row in PostgreSQL.
 
 ---
 
 ## The Scenario
-- **Caller**: Eleanor Vance (verified existing patient, ID: `36ecf076-a484-47d3-bd3d-b4d1c264e58b`).
+- **Source**: From the eval harness, text mode (`book-exist-02`).
+- **Patient**: Eleanor Vance (verified existing patient, ID: `36ecf076-a484-47d3-bd3d-b4d1c264e58b`).
 - **Doctor**: Dr. Sarah Chen (Family Medicine, ID: `10000000-0000-4000-8000-000000000002`).
 - **Selected Time**: Tuesday, October 20, 2026, at 9:00 AM – 9:30 AM EDT (`2026-10-20T13:00:00.000Z` to `2026-10-20T13:30:00.000Z`).
-- **Active Retell Call ID**: `call_8829410a7bc3`.
+- **Session / Call ID**: `call_8829410a7bc3`.
 
 ---
 
-## Step 1: Voice Capture & Speech-to-Text
-1. **Action**: The caller speaks: *"The 9:00 AM slot would be wonderful, thank you."*
-2. **Component**: Retell AI Voice Gateway.
+## Step 1: Utterance Input (Text Mode / Speech Stack)
+1. **Action**: The patient simulator produces the utterance turn: *"The 9:00 AM slot would be wonderful, thank you."*
+2. **Component**: In the eval harness, this turn is processed in text mode. In live telephony, audio streams via WebRTC/SIP through Retell's speech stack.
 3. **Processing**:
-   - Audio streams via WebRTC/SIP to Retell's speech stack.
-   - Audio is transcribed to text: `"The 9:00 AM slot would be wonderful, thank you."`
+   - Audio is transcribed or text is injected directly: `"The 9:00 AM slot would be wonderful, thank you."`
 
 ---
 
 ## Step 2: LLM Reasoning & Function Calling
-1. **Component**: Retell LLM Orchestrator.
+1. **Component**: LLM Orchestrator (in eval harness: `gemini-flash-lite-latest`; in production: Retell `gpt-6-luna`).
 2. **Context**: Prompt constructed via [`src/integrations/retell/agent-definition.ts:buildPrompt`](file:///c:/Users/Deekshith%20J/OneDrive/Desktop/Deekshii%20agenr/Deekshii%20agenr/src/integrations/retell/agent-definition.ts#L185).
 3. **Decision**:
-   - The caller has previously received slot options from `check_availability` and confirmed the 9:00 AM slot.
+   - The model observes the caller utterance requesting the 9:00 AM slot following a prior `check_availability` response.
    - Under Call Flow step 4 (Booking) and the Confirmation rule in the system prompt (`agent-definition.ts`), the model emits a structured tool invocation:
      ```json
      {
