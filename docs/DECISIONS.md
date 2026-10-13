@@ -146,7 +146,7 @@ The preview was rebuilt using patterns from current AI-product interfaces: Geist
 - Replaced Neon with Supabase PostgreSQL.
 - Established dual-connection topology: `DATABASE_URL` (Supabase transaction pooler on port 6543) for runtime queries, and `DIRECT_URL` (direct PostgreSQL on port 5432) for Drizzle migrations.
 - Runtime connection configured with `prepare: false` to accommodate Supabase transaction pooling constraints.
-- Environment variables centralized and validated with Zod in `src/lib/env.ts` and `src/config/environment.ts`.
+- Environment variables centralized and validated with Zod in `src/config/environment.ts`.
 - `RETELL_API_KEY` and `RETELL_AGENT_ID` made optional at initialization to decouple backend execution, tests, and CI from live telephony credentials.
 - Scaffolded `evals/`, `agent/`, and drizzle-kit configuration (`drizzle.config.ts`).
 

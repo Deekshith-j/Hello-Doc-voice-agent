@@ -142,7 +142,7 @@ sequenceDiagram
 | `src/domain/get-free-slots.ts` | Pure slot expansion algorithm handling wall-clock timezones, DST cutovers, and busy subtraction. |
 | `src/integrations/google-calendar-source.ts` | Google Calendar API integration handling event inserts, updates, and deletes. |
 | `src/integrations/retell/agent-definition.ts` | Voice agent prompt builder, tool schemas, and Retell agent deployment configs. |
-| `src/lib/env.ts` | Zod environment variable parsing and configuration validation. |
+| `src/config/environment.ts` | Zod environment variable parsing and configuration validation. |
 | `src/lib/format.ts` | Human-readable date, time, and currency formatting helpers. |
 | `src/server/rate-limiter.ts` | Sliding-window database-backed rate limiter for API protection. |
 | `src/server/retell-request.ts` | HMAC-SHA256 cryptographic verification for Retell webhook signatures. |

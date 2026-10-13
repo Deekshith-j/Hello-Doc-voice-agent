@@ -31,7 +31,7 @@ npm run eval:calibrate
 
 ---
 
-## 2. Tool API Regression Suite (`src/evals/tool-api-regression-suite.ts`)
+## 2. Tool API Regression Suite (`evals/tool-api-suite/tool-api-regression-suite.ts`)
 
 Regression testing for backend tool HTTP adapters, concurrency limits, and database contracts:
 ```bash

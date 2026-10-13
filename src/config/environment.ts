@@ -62,6 +62,24 @@ export function getRetellConfig(): RetellConfig | null {
   };
 }
 
+export function requireRetellConfig(): { apiKey: string; agentId: string } {
+  const config = getRetellConfig();
+  if (!config?.apiKey) {
+    throw new Error(
+      "Retell integration is not configured. Please set RETELL_API_KEY in .env.local.",
+    );
+  }
+  if (!config.agentId) {
+    throw new Error(
+      "Retell agent is not configured. Please set RETELL_AGENT_ID in .env.local.",
+    );
+  }
+  return {
+    apiKey: config.apiKey,
+    agentId: config.agentId,
+  };
+}
+
 export function isProduction(): boolean {
   return process.env.NODE_ENV === "production";
 }
