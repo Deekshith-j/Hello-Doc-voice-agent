@@ -105,7 +105,9 @@ export const createPatientSchema = z
       .trim()
       .describe("Caller's phone number.")
       .transform(normalizePhone)
-      .refine(isE164, { message: "Phone number must be a valid phone number." }),
+      .refine(isE164, {
+        message: "Phone number must be a valid phone number.",
+      }),
   })
   .strict();
 
@@ -142,7 +144,9 @@ export const bookAppointmentSchema = z
     doctor_id: z.uuid().describe("The chosen slot's doctor_id."),
     patient_id: patientId
       .optional()
-      .describe("patient_id returned by find_patient or create_patient for this caller."),
+      .describe(
+        "patient_id returned by find_patient or create_patient for this caller.",
+      ),
     full_name: z
       .string()
       .trim()
@@ -153,7 +157,9 @@ export const bookAppointmentSchema = z
     date_of_birth: z.iso
       .date()
       .optional()
-      .describe("Caller's date of birth as YYYY-MM-DD if patient_id is not available."),
+      .describe(
+        "Caller's date of birth as YYYY-MM-DD if patient_id is not available.",
+      ),
     phone: z
       .string()
       .trim()
@@ -174,7 +180,8 @@ export const bookAppointmentSchema = z
     if (!value.patient_id && (!value.full_name || !value.date_of_birth)) {
       context.addIssue({
         code: "custom",
-        message: "Provide either patient_id or both full_name and date_of_birth.",
+        message:
+          "Provide either patient_id or both full_name and date_of_birth.",
       });
     }
     validateWindow(value, context, 1);

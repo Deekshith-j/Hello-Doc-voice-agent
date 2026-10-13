@@ -1,9 +1,6 @@
 name: Calendar Sync Cron
 
 on:
-  schedule:
-    # 10-minute cadence reconciling calendar writes without hitting Vercel Hobby limits
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:

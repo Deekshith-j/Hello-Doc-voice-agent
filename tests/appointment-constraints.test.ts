@@ -21,8 +21,16 @@ const SLOT = "[2027-01-12 14:00:00+00,2027-01-12 14:30:00+00)";
 interface DbWrapper {
   close(): Promise<void>;
   count(): Promise<number>;
-  insert(patientId: string, timeSpan: string, idempotencyKey: string): Promise<string>;
-  insertIdempotent(patientId: string, timeSpan: string, idempotencyKey: string): Promise<string>;
+  insert(
+    patientId: string,
+    timeSpan: string,
+    idempotencyKey: string,
+  ): Promise<string>;
+  insertIdempotent(
+    patientId: string,
+    timeSpan: string,
+    idempotencyKey: string,
+  ): Promise<string>;
   reset(): Promise<void>;
 }
 
@@ -74,7 +82,9 @@ beforeEach(async () => {
         return rows[0].id;
       },
       count: async () => {
-        const rows = await sql<{ count: number }[]>`SELECT count(*)::int AS count FROM appointments`;
+        const rows = await sql<
+          { count: number }[]
+        >`SELECT count(*)::int AS count FROM appointments`;
         return rows[0]?.count ?? 0;
       },
     };
@@ -111,7 +121,8 @@ beforeEach(async () => {
            RETURNING id`,
           [DOCTOR_ID, patientId, timeSpan, idempotencyKey],
         );
-        if (!res.rows[0]?.id) throw new Error("Expected insert to return an id.");
+        if (!res.rows[0]?.id)
+          throw new Error("Expected insert to return an id.");
         return res.rows[0].id;
       },
       insertIdempotent: async (patientId, timeSpan, idempotencyKey) => {
@@ -123,11 +134,14 @@ beforeEach(async () => {
            RETURNING id`,
           [DOCTOR_ID, patientId, timeSpan, idempotencyKey],
         );
-        if (!res.rows[0]?.id) throw new Error("Expected insert to return an id.");
+        if (!res.rows[0]?.id)
+          throw new Error("Expected insert to return an id.");
         return res.rows[0].id;
       },
       count: async () => {
-        const res = await pglite.query<{ count: number }>("SELECT count(*)::int AS count FROM appointments");
+        const res = await pglite.query<{ count: number }>(
+          "SELECT count(*)::int AS count FROM appointments",
+        );
         return res.rows[0]?.count ?? 0;
       },
     };
@@ -155,8 +169,16 @@ describe("appointment database invariants", () => {
   });
 
   it("returns the original row when an idempotency key is retried", async () => {
-    const firstId = await db.insertIdempotent(PATIENT_ID, SLOT, "stable-request");
-    const retriedId = await db.insertIdempotent(PATIENT_ID, SLOT, "stable-request");
+    const firstId = await db.insertIdempotent(
+      PATIENT_ID,
+      SLOT,
+      "stable-request",
+    );
+    const retriedId = await db.insertIdempotent(
+      PATIENT_ID,
+      SLOT,
+      "stable-request",
+    );
 
     expect(retriedId).toBe(firstId);
     expect(await db.count()).toBe(1);

@@ -12,11 +12,7 @@ import { DoctoLogo } from "./docto-logo";
 import { isActive, navigation } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 
-export function Topbar({
-  voiceConnected,
-}: {
-  voiceConnected: boolean;
-}) {
+export function Topbar({ voiceConnected }: { voiceConnected: boolean }) {
   const pathname = usePathname();
   const current =
     navigation.find((item) => isActive(pathname, item.href)) ?? navigation[0];

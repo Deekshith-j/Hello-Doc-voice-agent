@@ -109,7 +109,8 @@ it("lists doctor schedules without error", async () => {
   const schedules = await dashboard.listDoctorSchedules(new Date());
   expect(Array.isArray(schedules)).toBe(true);
 
-  const { default: DoctorsPage } = await import("@/app/(dashboard)/doctors/page");
+  const { default: DoctorsPage } =
+    await import("@/app/(dashboard)/doctors/page");
   const page = await DoctorsPage();
   expect(page).toBeDefined();
 });

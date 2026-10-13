@@ -158,11 +158,10 @@ export class AppointmentToolService {
   async createPatient(input: CreatePatientInput): Promise<ToolResponse> {
     const patientId = deterministicUuid(input.idempotency_key);
 
-    const existingByNameAndDob =
-      await this.repository.findPatientsByNameAndDob(
-        input.full_name,
-        input.date_of_birth,
-      );
+    const existingByNameAndDob = await this.repository.findPatientsByNameAndDob(
+      input.full_name,
+      input.date_of_birth,
+    );
     if (existingByNameAndDob.length > 0) {
       const match = existingByNameAndDob.find((p) => p.id === patientId);
       if (match) {
@@ -487,7 +486,8 @@ export class AppointmentToolService {
   async retryCalendarSync(
     appointmentId: string,
   ): Promise<CalendarSyncStatus | null> {
-    const appointment = await this.repository.findAppointmentById(appointmentId);
+    const appointment =
+      await this.repository.findAppointmentById(appointmentId);
     if (!appointment) return null;
     return this.dependencies.calendarSync.sync(appointment);
   }

@@ -21,13 +21,19 @@ function toDate(value: Date | string | number): Date {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-export function formatTime(value: Date | string | number, timeZone: string): string {
+export function formatTime(
+  value: Date | string | number,
+  timeZone: string,
+): string {
   return formatter(timeZone, { hour: "numeric", minute: "2-digit" }).format(
     toDate(value),
   );
 }
 
-export function formatDay(value: Date | string | number, timeZone: string): string {
+export function formatDay(
+  value: Date | string | number,
+  timeZone: string,
+): string {
   return formatter(timeZone, {
     weekday: "short",
     month: "short",
@@ -35,11 +41,13 @@ export function formatDay(value: Date | string | number, timeZone: string): stri
   }).format(toDate(value));
 }
 
-export function formatDateTime(value: Date | string | number, timeZone: string): string {
+export function formatDateTime(
+  value: Date | string | number,
+  timeZone: string,
+): string {
   const d = toDate(value);
   return `${formatDay(d, timeZone)}, ${formatTime(d, timeZone)}`;
 }
-
 
 export function formatDuration(totalSeconds: number): string {
   const safe = Math.max(0, Math.round(totalSeconds));

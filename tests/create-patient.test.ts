@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { AppointmentToolService } from "@/application/appointment-tool-service";
 import type { CallLogRepository, ToolCallRecord } from "@/application/call-log";
@@ -57,7 +65,9 @@ describe("create_patient", () => {
     expect(result.ok).toBe(true);
     expect(result.code).toBe("patient_created");
     expect(result.data).toHaveProperty("patient_id");
-    expect(typeof (result.data as { patient_id: string }).patient_id).toBe("string");
+    expect(typeof (result.data as { patient_id: string }).patient_id).toBe(
+      "string",
+    );
 
     const patientId = (result.data as { patient_id: string }).patient_id;
     const found = await repository.findPatientByPhone("+15555550123");
@@ -275,7 +285,11 @@ describe("create_patient", () => {
 
     // Verify console.log does NOT contain secretName, secretDob, or secretPhone
     const allLogText = logSpy.mock.calls
-      .map((call) => call.map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg))).join(" "))
+      .map((call) =>
+        call
+          .map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg)))
+          .join(" "),
+      )
       .join("\n");
 
     expect(allLogText).not.toContain(secretName);

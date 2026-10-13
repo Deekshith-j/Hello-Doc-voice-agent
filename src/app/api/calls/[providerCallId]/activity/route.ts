@@ -10,7 +10,6 @@ export async function GET(
   _request: Request,
   context: RouteContext<"/api/calls/[providerCallId]/activity">,
 ): Promise<Response> {
-
   const parsed = providerCallIdSchema.safeParse(
     (await context.params).providerCallId,
   );

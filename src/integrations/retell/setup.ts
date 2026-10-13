@@ -72,6 +72,8 @@ console.log(`Registered Tools (${registeredToolUrls.length}):`);
 for (const url of registeredToolUrls) {
   console.log(`  - ${url}`);
 }
-console.log(`\nAdd these to your environment (Vercel project settings and .env.local):`);
+console.log(
+  `\nAdd these to your environment (Vercel project settings and .env.local):`,
+);
 console.log(`RETELL_LLM_ID=${llmId}`);
 console.log(`RETELL_AGENT_ID=${agentId}\n`);

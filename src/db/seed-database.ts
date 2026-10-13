@@ -66,12 +66,9 @@ async function replaceSchedules(transaction: Transaction): Promise<void> {
 
 async function upsertPatients(transaction: Transaction): Promise<void> {
   for (const patient of seedPatients) {
-    await transaction
-      .insert(patients)
-      .values(patient)
-      .onConflictDoNothing({
-        target: patients.phoneE164,
-      });
+    await transaction.insert(patients).values(patient).onConflictDoNothing({
+      target: patients.phoneE164,
+    });
   }
 }
 
@@ -87,10 +84,14 @@ async function seedAppointments(databaseUrl: string): Promise<number> {
     ORDER BY full_name
   `;
   const pastPatient = (
-    await sql<{ id: string }[]>`SELECT id FROM patients WHERE full_name = 'Morgan Pastonly' LIMIT 1`
+    await sql<
+      { id: string }[]
+    >`SELECT id FROM patients WHERE full_name = 'Morgan Pastonly' LIMIT 1`
   )[0];
   const futurePatient = (
-    await sql<{ id: string }[]>`SELECT id FROM patients WHERE full_name = 'Jordan Future' LIMIT 1`
+    await sql<
+      { id: string }[]
+    >`SELECT id FROM patients WHERE full_name = 'Jordan Future' LIMIT 1`
   )[0];
 
   let created = 0;
@@ -138,7 +139,11 @@ async function seedAppointments(databaseUrl: string): Promise<number> {
     }
 
     if (firstDoctor && futurePatient) {
-      const futureStart = nextWeekdayAt(firstDoctor.timezone ?? "America/New_York", 3, 11);
+      const futureStart = nextWeekdayAt(
+        firstDoctor.timezone ?? "America/New_York",
+        3,
+        11,
+      );
       const futureEnd = new Date(futureStart.getTime() + 30 * 60 * 1_000);
       await sql`
         INSERT INTO appointments (doctor_id, patient_id, time_span, reason, idempotency_key, status, calendar_sync_status)

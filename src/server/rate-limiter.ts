@@ -26,8 +26,7 @@ export async function consumeRateLimit(
 ): Promise<RateLimitResult> {
   const windowMs = options?.windowMs ?? RATE_LIMIT_WINDOW_MS;
   const maxRequests = options?.maxRequests ?? MAX_REQUESTS_PER_WINDOW;
-  const windowStartMs =
-    Math.floor(now.getTime() / windowMs) * windowMs;
+  const windowStartMs = Math.floor(now.getTime() / windowMs) * windowMs;
   const count = await store.incrementRateLimit(key, new Date(windowStartMs));
   return {
     allowed: count <= maxRequests,

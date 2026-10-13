@@ -147,11 +147,10 @@ async function checkGlobalRateLimit(
   now: Date,
   context: CallContext,
 ): Promise<Response | null> {
-  const globalLimit = await runtime.consumeRateLimit(
-    "web_call:global",
-    now,
-    { maxRequests: 30, windowMs: ONE_DAY_MS },
-  );
+  const globalLimit = await runtime.consumeRateLimit("web_call:global", now, {
+    maxRequests: 30,
+    windowMs: ONE_DAY_MS,
+  });
 
   if (!globalLimit.allowed) {
     console.warn(

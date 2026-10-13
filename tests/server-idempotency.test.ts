@@ -29,7 +29,8 @@ beforeAll(async () => {
   const calendar = new FakeCalendar(() => NOW);
   const calendarSync = new CalendarSync(repository, calendar);
   const getSlots = createAvailabilityService(
-    (doctorId, from, to) => repository.loadAvailabilitySnapshot(doctorId, from, to),
+    (doctorId, from, to) =>
+      repository.loadAvailabilitySnapshot(doctorId, from, to),
     calendar,
   );
   service = new AppointmentToolService({
@@ -50,9 +51,24 @@ afterAll(async () => {
 
 describe("Server-derived idempotency", () => {
   it("derives deterministic hash from call_id, patient_id, doctor_id, start_at", () => {
-    const key1 = deriveIdempotencyKey("call_abc", PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
-    const key2 = deriveIdempotencyKey("call_abc", PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
-    const diffSlot = deriveIdempotencyKey("call_abc", PATIENT_ID, DOCTOR_ID, TUESDAY_930AM_START);
+    const key1 = deriveIdempotencyKey(
+      "call_abc",
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
+    const key2 = deriveIdempotencyKey(
+      "call_abc",
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
+    const diffSlot = deriveIdempotencyKey(
+      "call_abc",
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_930AM_START,
+    );
 
     expect(key1).toBe(key2);
     expect(key1).not.toBe(diffSlot);
@@ -60,7 +76,12 @@ describe("Server-derived idempotency", () => {
 
   it("returns the same appointment row when the same call retries the booking", async () => {
     const callId = "call_retry_test";
-    const key = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
+    const key = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
 
     const first = await service.bookAppointment({
       patient_id: PATIENT_ID,
@@ -88,14 +109,26 @@ describe("Server-derived idempotency", () => {
     expect(firstData.appointment_id).toBe(secondData.appointment_id);
 
     // Verify exactly one row in DB
-    const rows = await database.sql<{ count: number }[]>`SELECT count(*)::int AS count FROM appointments`;
+    const rows = await database.sql<
+      { count: number }[]
+    >`SELECT count(*)::int AS count FROM appointments`;
     expect(rows[0]?.count).toBe(1);
   });
 
   it("creates a second booking when the same call books a different slot", async () => {
     const callId = "call_multi_slot_test";
-    const key1 = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
-    const key2 = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, TUESDAY_930AM_START);
+    const key1 = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
+    const key2 = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_930AM_START,
+    );
 
     const first = await service.bookAppointment({
       patient_id: PATIENT_ID,
@@ -122,7 +155,9 @@ describe("Server-derived idempotency", () => {
     expect(firstData.appointment_id).not.toBe(secondData.appointment_id);
 
     // Verify two distinct rows in DB
-    const rows = await database.sql<{ count: number }[]>`SELECT count(*)::int AS count FROM appointments`;
+    const rows = await database.sql<
+      { count: number }[]
+    >`SELECT count(*)::int AS count FROM appointments`;
     expect(rows[0]?.count).toBe(2);
   });
 
@@ -132,7 +167,12 @@ describe("Server-derived idempotency", () => {
     const isoOffset = "2027-01-12T09:00:00-05:00"; // Exact same instant in UTC
 
     const keyUtc = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, isoUtc);
-    const keyOffset = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, isoOffset);
+    const keyOffset = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      isoOffset,
+    );
     expect(keyUtc).toBe(keyOffset);
 
     const first = await service.bookAppointment({
@@ -159,13 +199,20 @@ describe("Server-derived idempotency", () => {
     const secondData = second.data as { appointment_id: string };
     expect(firstData.appointment_id).toBe(secondData.appointment_id);
 
-    const rows = await database.sql<{ count: number }[]>`SELECT count(*)::int AS count FROM appointments`;
+    const rows = await database.sql<
+      { count: number }[]
+    >`SELECT count(*)::int AS count FROM appointments`;
     expect(rows[0]?.count).toBe(1);
   });
 
   it("book, cancel, rebook the same slot in one call works and returns a BOOKED appointment, not the cancelled one", async () => {
     const callId = "call_rebook_cycle";
-    const key = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
+    const key = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
 
     // 1. Book initial appointment
     const booked = await service.bookAppointment({
@@ -178,7 +225,10 @@ describe("Server-derived idempotency", () => {
     });
     expect(booked.ok).toBe(true);
     expect(booked.code).toBe("appointment_booked");
-    const bookedData = booked.data as { appointment_id: string; status: string };
+    const bookedData = booked.data as {
+      appointment_id: string;
+      status: string;
+    };
     expect(bookedData.status).toBe("booked");
 
     // 2. Cancel the appointment
@@ -202,7 +252,10 @@ describe("Server-derived idempotency", () => {
     });
     expect(rebooked.ok).toBe(true);
     expect(rebooked.code).toBe("appointment_booked");
-    const rebookedData = rebooked.data as { appointment_id: string; status: string };
+    const rebookedData = rebooked.data as {
+      appointment_id: string;
+      status: string;
+    };
     expect(rebookedData.status).toBe("booked");
     expect(rebookedData.status).not.toBe("cancelled");
   });
@@ -220,12 +273,17 @@ describe("Server-derived idempotency", () => {
     // Mock getSlots to say slot was available (simulating pre-insert check before the race)
     const racingService = new AppointmentToolService({
       repository: new PostgresClinicRepository(database.sql),
-      getSlots: async () => [{
-        doctorId: DOCTOR_ID,
-        start: new Date(TUESDAY_9AM_START),
-        end: new Date(TUESDAY_9AM_END),
-      }],
-      calendarSync: new CalendarSync(new PostgresClinicRepository(database.sql), undefined),
+      getSlots: async () => [
+        {
+          doctorId: DOCTOR_ID,
+          start: new Date(TUESDAY_9AM_START),
+          end: new Date(TUESDAY_9AM_END),
+        },
+      ],
+      calendarSync: new CalendarSync(
+        new PostgresClinicRepository(database.sql),
+        undefined,
+      ),
       clock: () => NOW,
     });
 
@@ -240,14 +298,23 @@ describe("Server-derived idempotency", () => {
 
     expect(result.ok).toBe(true);
     expect(result.code).toBe("appointment_booked");
-    const data = result.data as { status: string; patient_id?: string; doctor_id: string };
+    const data = result.data as {
+      status: string;
+      patient_id?: string;
+      doctor_id: string;
+    };
     expect(data.status).toBe("booked");
     expect(data.doctor_id).toBe(DOCTOR_ID);
   });
 
   it("book, reschedule, retry original book detects payload change and rejects with idempotency_key_reused", async () => {
     const callId = "call_reschedule_retry";
-    const originalKey = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
+    const originalKey = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
 
     // 1. Book original slot (9:00 AM)
     const booked = await service.bookAppointment({
@@ -286,7 +353,12 @@ describe("Server-derived idempotency", () => {
 
   it("cancel, other patient books same slot, retry original rejects with slot_unavailable", async () => {
     const callId = "call_cancel_compete";
-    const keyP1 = deriveIdempotencyKey(callId, PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
+    const keyP1 = deriveIdempotencyKey(
+      callId,
+      PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
 
     // 1. Patient 1 books slot
     const bookedP1 = await service.bookAppointment({
@@ -308,7 +380,12 @@ describe("Server-derived idempotency", () => {
     expect(cancelled.ok).toBe(true);
 
     // 3. Other patient (Sam Rivera) books the same slot
-    const keyP2 = deriveIdempotencyKey("call_other_patient", OTHER_PATIENT_ID, DOCTOR_ID, TUESDAY_9AM_START);
+    const keyP2 = deriveIdempotencyKey(
+      "call_other_patient",
+      OTHER_PATIENT_ID,
+      DOCTOR_ID,
+      TUESDAY_9AM_START,
+    );
     const bookedP2 = await service.bookAppointment({
       patient_id: OTHER_PATIENT_ID,
       doctor_id: DOCTOR_ID,
@@ -333,7 +410,9 @@ describe("Server-derived idempotency", () => {
     expect(retryP1.code).toBe("slot_unavailable");
 
     // Verify Patient 2's booking is untouched
-    const p2Appts = await service.listPatientAppointments({ patient_id: OTHER_PATIENT_ID });
+    const p2Appts = await service.listPatientAppointments({
+      patient_id: OTHER_PATIENT_ID,
+    });
     expect(p2Appts.ok).toBe(true);
     const p2Data = p2Appts.data as { appointments: Array<{ id: string }> };
     expect(p2Data.appointments).toHaveLength(1);

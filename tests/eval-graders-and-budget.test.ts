@@ -5,7 +5,11 @@ import { gradeDbState } from "../evals/agent-eval/graders/db-grader";
 import { JUDGE_RUBRIC } from "../evals/agent-eval/graders/judge-grader";
 import { gradeToolTrace } from "../evals/agent-eval/graders/trace-grader";
 import { BudgetExceededError, LlmClient } from "../evals/agent-eval/llm-client";
-import type { Scenario, ToolCallRecord, TranscriptTurn } from "../evals/agent-eval/types";
+import type {
+  Scenario,
+  ToolCallRecord,
+  TranscriptTurn,
+} from "../evals/agent-eval/types";
 
 describe("Evaluation Budget Cap", () => {
   it("calculates cost accurately based on model pricing", () => {
@@ -131,7 +135,10 @@ describe("Tool Trace Grader", () => {
     const toolCalls: ToolCallRecord[] = [
       {
         tool_name: "find_patient",
-        arguments: { full_name: "Completely Different", date_of_birth: "1952-04-12" },
+        arguments: {
+          full_name: "Completely Different",
+          date_of_birth: "1952-04-12",
+        },
         result: { ok: false },
         timestamp: 1000,
       },

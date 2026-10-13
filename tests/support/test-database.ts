@@ -172,7 +172,6 @@ export async function startTestDatabase(): Promise<TestDatabase> {
   };
 }
 
-
 async function insertFixtures(sql: Sql): Promise<void> {
   // One weekday doctor with four 30-minute morning slots keeps expected results readable.
   await sql`

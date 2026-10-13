@@ -172,7 +172,9 @@ export function LiveCall({ voiceConnected }: { voiceConnected: boolean }) {
             }
           }
         }
-        setError(`Call interrupted: ${detail}. Check your connection and retry.`);
+        setError(
+          `Call interrupted: ${detail}. Check your connection and retry.`,
+        );
         client.stopCall();
       });
 

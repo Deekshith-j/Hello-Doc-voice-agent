@@ -33,16 +33,16 @@ Live demo: [https://docto-agent.vercel.app](https://docto-agent.vercel.app)
 
 ## 3. Tech Stack
 
-| Layer | Tool | Reason |
-|---|---|---|
-| Runtime & Framework | Next.js 16 (App Router) / Node.js 24 | Unified full-stack serverless API routes, server actions, and dashboard UI. |
-| Language | TypeScript | Strict static type safety across database schemas, tool definitions, and application code. |
-| Database & ORM | PostgreSQL (Supabase) / Drizzle ORM | Relational persistence with btree_gist exclusion constraints for race-condition prevention. |
-| Voice Telephony | Retell AI | Real-time conversational voice streaming, speech-to-text, and audio turn-taking. |
-| UI & Styling | Tailwind CSS | Responsive styling for the clinical operations console. |
-| Test Runner | Vitest | Fast test execution with isolated transaction support. |
-| Calendar Integration | Google Calendar API | External calendar free/busy lookup and event synchronization. |
-| Evaluation LLMs | Google Gemini API | Automated multi-turn patient dialogue simulation and rubric evaluation. |
+| Layer                | Tool                                 | Reason                                                                                      |
+| -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Runtime & Framework  | Next.js 16 (App Router) / Node.js 24 | Unified full-stack serverless API routes, server actions, and dashboard UI.                 |
+| Language             | TypeScript                           | Strict static type safety across database schemas, tool definitions, and application code.  |
+| Database & ORM       | PostgreSQL (Supabase) / Drizzle ORM  | Relational persistence with btree_gist exclusion constraints for race-condition prevention. |
+| Voice Telephony      | Retell AI                            | Real-time conversational voice streaming, speech-to-text, and audio turn-taking.            |
+| UI & Styling         | Tailwind CSS                         | Responsive styling for the clinical operations console.                                     |
+| Test Runner          | Vitest                               | Fast test execution with isolated transaction support.                                      |
+| Calendar Integration | Google Calendar API                  | External calendar free/busy lookup and event synchronization.                               |
+| Evaluation LLMs      | Google Gemini API                    | Automated multi-turn patient dialogue simulation and rubric evaluation.                     |
 
 ---
 
@@ -87,21 +87,25 @@ Configure the following variables in `.env.local`:
 ### Installation and Initialization
 
 1. Install dependencies:
+
    ```bash
    npm ci
    ```
 
 2. Run database migrations:
+
    ```bash
    npm run migrate
    ```
 
 3. Seed synthetic clinic data:
+
    ```bash
    npm run seed
    ```
 
 4. Provision the Retell agent prompt and tools:
+
    ```bash
    npm run agent:provision
    ```
@@ -157,7 +161,7 @@ Results from `evals/results/agent-eval-smoke-1791833840065.json`:
 - **Judge Model**: `gemini-3.1-flash-lite`
 - **Deployed Retell Model**: `gpt-6-luna`
 
-*Note*: The evaluation harness agent runs in text mode using `gemini-flash-lite-latest` for low-cost automated testing. The production voice agent deployed on Retell uses `gpt-6-luna` with voice streaming and turn-taking.
+_Note_: The evaluation harness agent runs in text mode using `gemini-flash-lite-latest` for low-cost automated testing. The production voice agent deployed on Retell uses `gpt-6-luna` with voice streaming and turn-taking.
 
 ---
 

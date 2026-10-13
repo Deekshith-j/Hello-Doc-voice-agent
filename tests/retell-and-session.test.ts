@@ -64,7 +64,8 @@ describe("Retell webhook mapping", () => {
 
 describe("Test database safety guard", () => {
   it("throws when TEST_DATABASE_URL equals DATABASE_URL", async () => {
-    const { assertTestDatabaseSafety } = await import("./support/test-database");
+    const { assertTestDatabaseSafety } =
+      await import("./support/test-database");
     const testUrl = "postgresql://postgres:secret@db.supabase.co:5432/postgres";
     expect(() => assertTestDatabaseSafety(testUrl, testUrl)).toThrow(
       /Safety guard violation/,
@@ -72,7 +73,8 @@ describe("Test database safety guard", () => {
   });
 
   it("throws when TEST_DATABASE_URL shares the same Supabase project identifier", async () => {
-    const { assertTestDatabaseSafety } = await import("./support/test-database");
+    const { assertTestDatabaseSafety } =
+      await import("./support/test-database");
     const mainUrl =
       "postgresql://postgres.myproj123:secret@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
     const testUrl =
@@ -83,7 +85,8 @@ describe("Test database safety guard", () => {
   });
 
   it("permits distinct database URLs and distinct projects", async () => {
-    const { assertTestDatabaseSafety } = await import("./support/test-database");
+    const { assertTestDatabaseSafety } =
+      await import("./support/test-database");
     const mainUrl =
       "postgresql://postgres.projA:secret@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
     const testUrl =
@@ -94,9 +97,8 @@ describe("Test database safety guard", () => {
 
 describe("Fail closed Retell authentication", () => {
   it("rejects requests in production when signing key is missing", async () => {
-    const { authenticateRetellRequest, retellAuthFailure } = await import(
-      "@/server/retell-request"
-    );
+    const { authenticateRetellRequest, retellAuthFailure } =
+      await import("@/server/retell-request");
     const envObj = process.env as Record<string, string | undefined>;
     const original = envObj.NODE_ENV;
     try {
@@ -111,9 +113,8 @@ describe("Fail closed Retell authentication", () => {
   });
 
   it("permits unsigned requests in non-production when signing key is unset", async () => {
-    const { authenticateRetellRequest, retellAuthFailure } = await import(
-      "@/server/retell-request"
-    );
+    const { authenticateRetellRequest, retellAuthFailure } =
+      await import("@/server/retell-request");
     const envObj = process.env as Record<string, string | undefined>;
     const original = envObj.NODE_ENV;
     try {
@@ -164,15 +165,24 @@ describe("Web calls kill switch & rate limiting", () => {
     const options = { maxRequests: 5, windowMs: 3600_000 };
 
     for (let i = 1; i <= 5; i++) {
-      const res = await consumeRateLimit(store, "web_call:ip:127.0.0.1", now, options);
+      const res = await consumeRateLimit(
+        store,
+        "web_call:ip:127.0.0.1",
+        now,
+        options,
+      );
       expect(res.allowed).toBe(true);
       expect(res.remaining).toBe(5 - i);
     }
 
-    const blocked = await consumeRateLimit(store, "web_call:ip:127.0.0.1", now, options);
+    const blocked = await consumeRateLimit(
+      store,
+      "web_call:ip:127.0.0.1",
+      now,
+      options,
+    );
     expect(blocked.allowed).toBe(false);
     expect(blocked.remaining).toBe(0);
     expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
   });
 });
-

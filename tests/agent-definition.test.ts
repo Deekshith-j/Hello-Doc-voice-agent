@@ -33,9 +33,7 @@ describe("agent-definition prompt and configuration", () => {
 
   it("includes all 9 expected tools in the LLM tool list", () => {
     const llm = buildRetellLlm(testSettings);
-    const names = llm.general_tools.map(
-      (t: { name?: string }) => t.name,
-    );
+    const names = llm.general_tools.map((t: { name?: string }) => t.name);
 
     expect(names).toEqual([
       "end_call",
@@ -63,7 +61,9 @@ describe("agent-definition prompt and configuration", () => {
     expect(prompt).toContain("# Error Handling");
 
     // Key requirements
-    expect(prompt).toContain("Are you a new patient or have you been here before?");
+    expect(prompt).toContain(
+      "Are you a new patient or have you been here before?",
+    );
     expect(prompt).toContain("find_patient");
     expect(prompt).toContain("create_patient");
     expect(prompt).toContain("{{emergency_number}}");
