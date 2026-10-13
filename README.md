@@ -6,6 +6,8 @@ Docto is an AI voice receptionist for clinical appointment scheduling. It handle
 
 Live demo: [https://docto-agent.vercel.app](https://docto-agent.vercel.app)
 
+![Docto Live Call Workspace](docs/images/dashboard.png)
+
 ---
 
 ## 2. How It Works
